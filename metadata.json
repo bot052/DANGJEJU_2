@@ -1,0 +1,8 @@
+{
+  "name": "댕제주 - 제주 반려견 스마트 관광 도우미",
+  "description": "반려견과 함께하는 제주 여행을 위한 스마트 관광 도우미. 지역별·유형별 반려견 동반 가능 카페, 숙소, 관광지, 산책로 검색 및 동반 조건과 지도 위치 제공",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,48 @@
+import { EventBanner } from '../types';
+
+export const JEJU_DOG_EVENTS: EventBanner[] = [
+  {
+    id: 'event-1',
+    badge: 'JEJU BEACH FESTA',
+    title: '바다를 달리는 우리, 댕댕 비치 페스타',
+    subtitle: '에메랄드빛 협재·금능 해변에서 즐기는 패들보드 & 선셋 비치런',
+    imageUrl: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?w=1600&auto=format&fit=crop&q=85',
+    date: '2026.09.20 ~ 09.22',
+    location: '협재·금능 반려견 해변',
+    tag: '기념 키트 증정',
+    linkText: '자세히 보기',
+  },
+  {
+    id: 'event-2',
+    badge: 'AUTUMN PICNIC',
+    title: '황금빛 감귤밭 속 댕댕 피크닉',
+    subtitle: '서귀포 유기농 감귤농원에서 즐기는 멍푸치노 시음 & 가을 인생샷',
+    imageUrl: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=1600&auto=format&fit=crop&q=85',
+    date: '2026.09.15 ~ 10.15',
+    location: '서귀포 펫 가든 감귤원',
+    tag: '무료 시음권',
+    linkText: '참여 안내',
+  },
+  {
+    id: 'event-3',
+    badge: 'SUNSET WALKING',
+    title: '노을빛 애월 해안도로 댕댕 워크',
+    subtitle: '붉게 물드는 현무암 바다 절경을 따라 반려견과 걷는 황혼의 산책길',
+    imageUrl: 'https://images.unsplash.com/photo-1548767797-d8c844163c4c?w=1600&auto=format&fit=crop&q=85',
+    date: '상시 운영',
+    location: '애월 한담 해안산책로',
+    tag: '노을 명소 코스',
+    linkText: '코스 확인',
+  },
+  {
+    id: 'event-4',
+    badge: 'NATURE CHALLENGE',
+    title: '곶자왈 피톤치드 숲속 노즈워크 챌린지',
+    subtitle: '신비로운 원시림 숲길을 호흡하며 완성하는 댕댕이 숲 완주 메달',
+    imageUrl: 'https://images.unsplash.com/photo-1552053831-71594a27632d?w=1600&auto=format&fit=crop&q=85',
+    date: '2026.10.03',
+    location: '동부 곶자왈 숲길',
+    tag: '친환경 메달 수여',
+    linkText: '사전 접수',
+  },
+];
