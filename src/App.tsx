@@ -300,26 +300,55 @@ export default function App() {
         </div>
 
         {/* 6. 메인 콘텐츠 뷰 */}
-        <div className={`pb-16 ${
-          viewMode === 'split'
-            ? 'grid grid-cols-1 lg:grid-cols-12 gap-6 items-start'
-            : 'grid grid-cols-1 gap-4 items-start'
-        }`}>
-          
-          {/* 목록 컬럼: 분할(split) 또는 목록(list)일 때 항상 최우선(order-1) 표시 */}
-          {(viewMode === 'split' || viewMode === 'list') && (
-            <div 
-              ref={cardSectionRef}
-              className={`
-                ${viewMode === 'split' 
-                  ? 'order-1 lg:col-span-7 flex flex-col gap-4 lg:h-[calc(100vh-140px)] lg:overflow-y-auto lg:pr-2 scrollbar-thin' 
-                  : 'w-full flex flex-col gap-1.5'
-                }
-              `}
-            >
-              {/* 모바일 화면에서 카드 목록 상단에 간편 지도 바로가기 버튼 */}
-              {viewMode === 'split' && (
-                <div className="lg:hidden flex items-center justify-between px-3 py-2 bg-amber-50/90 rounded-2xl border border-amber-200/70 text-xs font-bold shadow-2xs">
+        <div className="pb-16">
+          {viewMode === 'split' ? (
+            /* 2열 구조: PC에서는 지도 약 65% (좌) + 목록 약 35% (우) 동일 고정 높이, 모바일에서는 자연스러운 세로 스택 */
+            <div className="flex flex-col lg:flex-row lg:h-[720px] xl:h-[760px] 2xl:h-[800px] gap-4 lg:gap-5 items-stretch">
+              
+              {/* [PC: 좌측 65% 지도 / 모바일: 하단 지도] */}
+              <div 
+                ref={mapSectionRef}
+                className="order-2 lg:order-1 w-full lg:w-[65%] shrink-0 h-[400px] sm:h-[460px] lg:h-full rounded-3xl overflow-hidden shadow-sm border border-amber-200/70 bg-white relative flex flex-col"
+              >
+                {/* 모바일 지도 헤더 바 */}
+                <div className="lg:hidden bg-slate-900 text-white px-4 py-2.5 text-xs font-black flex items-center justify-between shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                    <span>제주 반려견 여행 지도 ({filteredPlaces.length}곳)</span>
+                  </div>
+                  <button
+                    onClick={() => cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
+                    className="text-[11px] text-amber-300 hover:text-amber-200 font-bold"
+                  >
+                    카드 목록으로 ↑
+                  </button>
+                </div>
+                <div className="flex-1 min-h-0 relative">
+                  <JejuMap
+                    places={filteredPlaces}
+                    selectedPlace={selectedPlace}
+                    onSelectPlace={(p) => setSelectedPlace(p)}
+                    onOpenDetail={handleOpenDetail}
+                  />
+                </div>
+              </div>
+
+              {/* [PC: 우측 35% 목록 / 모바일: 상단 카드 목록] */}
+              <div 
+                ref={cardSectionRef}
+                className="order-1 lg:order-2 w-full lg:w-[35%] min-w-0 lg:h-full flex flex-col min-h-0"
+              >
+                {/* PC 상단 목록 정보 헤더 (고정) */}
+                <div className="hidden lg:flex items-center justify-between pb-2.5 mb-2 border-b border-slate-200/80 px-1 shrink-0">
+                  <div className="flex items-center gap-1.5 text-xs font-black text-slate-800">
+                    <Dog className="w-4 h-4 text-amber-500" />
+                    <span>추천 여행지 <strong className="text-amber-600">{filteredPlaces.length}곳</strong></span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-slate-400">스크롤하여 둘러보기</span>
+                </div>
+
+                {/* 모바일 화면 상단 간편 지도 바로가기 버튼 */}
+                <div className="lg:hidden flex items-center justify-between px-3 py-2 bg-amber-50/90 rounded-2xl border border-amber-200/70 text-xs font-bold shadow-2xs mb-3 shrink-0">
                   <span className="flex items-center gap-1.5 text-slate-700">
                     <Dog className="w-4 h-4 text-amber-500" />
                     <span>추천 명소 <strong>{filteredPlaces.length}곳</strong></span>
@@ -332,42 +361,63 @@ export default function App() {
                     <span>지도 보기</span>
                   </button>
                 </div>
-              )}
 
+                {/* 관광지 목록 영역: 35% 영역 안에서만 매끄럽게 세로 스크롤 (카드는 절대 압축되지 않고 읽기 좋은 크기 유지) */}
+                <div className="flex-1 min-h-0 lg:overflow-y-auto lg:pr-2 flex flex-col gap-3 scrollbar-thin">
+                  {filteredPlaces.length === 0 ? (
+                    <div className="bg-white rounded-3xl p-10 text-center border border-amber-100 shadow-2xs">
+                      <Dog className="w-12 h-12 mx-auto text-amber-300 mb-3" />
+                      <h3 className="text-base font-extrabold text-slate-800">
+                        선택한 조건의 장소가 없습니다
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        지역이나 장소 유형을 다른 옵션으로 선택해보세요.
+                      </p>
+                      <button
+                        onClick={() => {
+                          setSelectedRegion('all');
+                          setSelectedCategory('all');
+                        }}
+                        className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-sm"
+                      >
+                        전체 장소 보기
+                      </button>
+                    </div>
+                  ) : (
+                    filteredPlaces.map((place) => (
+                      <PlaceCard
+                        key={place.id}
+                        place={place}
+                        isSelected={selectedPlace?.id === place.id}
+                        isSaved={savedPlaceIds.includes(place.id)}
+                        onSelect={(p) => setSelectedPlace(p)}
+                        onToggleSave={toggleSavePlace}
+                        onOpenDetail={handleOpenDetail}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+          ) : viewMode === 'list' ? (
+            /* 목록 단독 모드: 전체 너비 목록 */
+            <div className="w-full flex flex-col gap-2">
               {filteredPlaces.length === 0 ? (
                 <div className="bg-white rounded-3xl p-12 text-center border border-amber-100 shadow-2xs">
                   <Dog className="w-12 h-12 mx-auto text-amber-300 mb-3" />
-                  <h3 className="text-base font-extrabold text-slate-800">
-                    선택한 조건의 장소가 없습니다
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-1">
-                    지역이나 장소 유형을 다른 옵션으로 선택해보세요.
-                  </p>
+                  <h3 className="text-base font-extrabold text-slate-800">선택한 조건의 장소가 없습니다</h3>
                   <button
                     onClick={() => {
                       setSelectedRegion('all');
                       setSelectedCategory('all');
                     }}
-                    className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs transition-colors shadow-sm"
+                    className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs"
                   >
                     전체 장소 보기
                   </button>
                 </div>
-              ) : viewMode === 'split' ? (
-                /* 분할뷰: 처음에 만들어준 풍성한 카드형태로 크게 표시 (모든 정보 완벽 표출) */
-                filteredPlaces.map((place) => (
-                  <PlaceCard
-                    key={place.id}
-                    place={place}
-                    isSelected={selectedPlace?.id === place.id}
-                    isSaved={savedPlaceIds.includes(place.id)}
-                    onSelect={(p) => setSelectedPlace(p)}
-                    onToggleSave={toggleSavePlace}
-                    onOpenDetail={handleOpenDetail}
-                  />
-                ))
               ) : (
-                /* 목록형: 가로줄로 가늘게 여러 개를 한번에 스캔할 수 있게 표시 */
                 filteredPlaces.map((place) => (
                   <PlaceListItem
                     key={place.id}
@@ -381,42 +431,15 @@ export default function App() {
                 ))
               )}
             </div>
-          )}
-
-          {/* 지도 컬럼: 분할 모드(PC에선 우측 고정, 모바일에선 카드 아래 위치) 또는 지도 단독 모드 */}
-          {(viewMode === 'split' || viewMode === 'map') && (
-            <div 
-              ref={mapSectionRef}
-              className={`
-                ${viewMode === 'split' 
-                  ? 'order-2 lg:col-span-5 h-[420px] sm:h-[480px] lg:h-[calc(100vh-140px)] sticky top-14 sm:top-16 lg:top-20 z-10 rounded-3xl overflow-hidden shadow-sm border border-amber-200/60 flex flex-col' 
-                  : 'w-full h-[580px] lg:h-[calc(100vh-140px)] min-h-[460px] rounded-3xl overflow-hidden shadow-sm border border-amber-200/60 flex flex-col'
-                }
-              `}
-            >
-              {/* 모바일 화면에서 지도 헤더 바 */}
-              {viewMode === 'split' && (
-                <div className="lg:hidden bg-slate-900 text-white px-4 py-2.5 text-xs font-black flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                    <span>제주 반려견 여행 지도 ({filteredPlaces.length}곳)</span>
-                  </div>
-                  <button
-                    onClick={() => cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' })}
-                    className="text-[11px] text-amber-300 hover:text-amber-200 font-bold"
-                  >
-                    카드 목록으로 ↑
-                  </button>
-                </div>
-              )}
-              <div className="flex-1 min-h-0 relative">
-                <JejuMap
-                  places={filteredPlaces}
-                  selectedPlace={selectedPlace}
-                  onSelectPlace={(p) => setSelectedPlace(p)}
-                  onOpenDetail={handleOpenDetail}
-                />
-              </div>
+          ) : (
+            /* 지도 단독 모드: 전체 너비 지도 */
+            <div className="w-full h-[620px] lg:h-[760px] rounded-3xl overflow-hidden shadow-sm border border-amber-200/70 bg-white">
+              <JejuMap
+                places={filteredPlaces}
+                selectedPlace={selectedPlace}
+                onSelectPlace={(p) => setSelectedPlace(p)}
+                onOpenDetail={handleOpenDetail}
+              />
             </div>
           )}
         </div>
