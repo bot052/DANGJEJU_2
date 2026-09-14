@@ -1,6 +1,5 @@
 export default async function handler(req, res) {
   try {
-    // Vercel 환경 변수에서 공공데이터 API 키 취득 (절대 노출 금지)
     const serviceKey = process.env.TOUR_API_KEY;
 
     if (!serviceKey) {
@@ -10,190 +9,150 @@ export default async function handler(req, res) {
       });
     }
 
-    // 쿼리 파라미터
-    // source: 'auto' (기본: petTourSyncList2 시도 후 필요시 areaBasedList2 폴백),
-    //         'petTourSyncList2' (동기화 목록만 강제),
-    //         'areaBasedList2' (제주 지역목록만 강제)
+    // 기본 단위: pageNo=1, numOfRows=30
     const { 
       pageNo = "1", 
-      numOfRows = "100", 
-      contentTypeId,
-      source = "auto"
+      numOfRows = "30", 
+      contentTypeId 
     } = req.query;
 
-    let targetItems = [];
-    let sourceApiUsed = "";
-    let rawHeader = null;
-    let rawTotalCount = 0;
-    let fallbackHappened = false;
-    let fallbackReason = "";
+    // 1. areaBasedList2로 제주특별자치도(areaCode=39) 관광지 목록 조회
+    const areaParams = new URLSearchParams({
+      serviceKey: serviceKey,
+      MobileOS: "WEB",
+      MobileApp: "DANGJeju",
+      _type: "json",
+      areaCode: "39",
+      pageNo: String(pageNo),
+      numOfRows: String(numOfRows),
+      arrange: "A", // 제목순
+    });
 
-    // -------------------------------------------------------------
-    // 우선순위 A: petTourSyncList2 전체 조회 → 서버에서 areacode=39 필터링
-    // -------------------------------------------------------------
-    if (source === "auto" || source === "petTourSyncList2") {
-      sourceApiUsed = "petTourSyncList2";
+    if (contentTypeId) {
+      areaParams.append("contentTypeId", String(contentTypeId));
+    }
 
-      // 1) 1페이지 조회 (주의: petTourSyncList2는 areaCode 파라미터를 지원하지 않으므로 포함하지 않음)
-      const page1Params = new URLSearchParams({
-        serviceKey: serviceKey,
-        MobileOS: "WEB",
-        MobileApp: "DANGJeju",
-        _type: "json",
-        pageNo: "1",
-        numOfRows: "1000", // 전국 데이터를 폭넓게 수집하기 위해 1000건 요청
+    const areaUrl = `https://apis.data.go.kr/B551011/KorService2/areaBasedList2?${areaParams.toString()}`;
+    const areaResponse = await fetch(areaUrl);
+    const areaText = await areaResponse.text();
+
+    let areaData;
+    try {
+      areaData = JSON.parse(areaText);
+    } catch {
+      return res.status(502).json({
+        success: false,
+        error: "areaBasedList2 응답을 JSON으로 파싱하지 못했습니다.",
       });
+    }
 
-      if (contentTypeId) {
-        page1Params.append("contentTypeId", String(contentTypeId));
-      }
+    const header = areaData?.response?.header;
+    if (header && header.resultCode && header.resultCode !== "0000") {
+      return res.status(502).json({
+        success: false,
+        error: `공공데이터 API 오류: ${header.resultMsg || "비정상 응답"}`,
+        resultCode: header.resultCode,
+      });
+    }
 
-      const url1 = `https://apis.data.go.kr/B551011/KorService2/petTourSyncList2?${page1Params.toString()}`;
-      const res1 = await fetch(url1);
-      const text1 = await res1.text();
+    const sourceTotalCount = Number(areaData?.response?.body?.totalCount || 0);
 
-      let data1 = null;
+    let rawPlaces = [];
+    const itemsObj = areaData?.response?.body?.items;
+    if (itemsObj && itemsObj.item) {
+      rawPlaces = Array.isArray(itemsObj.item) ? itemsObj.item : [itemsObj.item];
+    }
+
+    const checkedCount = rawPlaces.length;
+
+    // 2. 요청된 목록의 각 contentid에 대해 detailPetTour2 병렬 호출
+    const petCheckPromises = rawPlaces.map(async (place) => {
+      const contentId = place.contentid ? String(place.contentid) : "";
+      if (!contentId) return null;
+
       try {
-        data1 = JSON.parse(text1);
-      } catch {
-        data1 = null;
-      }
+        const petParams = new URLSearchParams({
+          serviceKey: serviceKey,
+          MobileOS: "WEB",
+          MobileApp: "DANGJeju",
+          _type: "json",
+          contentId: contentId,
+        });
 
-      rawHeader = data1?.response?.header || null;
-      rawTotalCount = Number(data1?.response?.body?.totalCount || 0);
+        const petUrl = `https://apis.data.go.kr/B551011/KorService2/detailPetTour2?${petParams.toString()}`;
+        const petResponse = await fetch(petUrl);
+        const petText = await petResponse.text();
+        const petData = JSON.parse(petText);
 
-      let allRawItems = [];
-      const itemsObj1 = data1?.response?.body?.items;
-      if (itemsObj1 && itemsObj1.item) {
-        allRawItems = Array.isArray(itemsObj1.item) ? itemsObj1.item : [itemsObj1.item];
-      }
+        const petBody = petData?.response?.body;
+        const petTotalCount = Number(petBody?.totalCount || 0);
+        const petItems = petBody?.items?.item;
 
-      // 만약 전체 건수가 1,000건을 초과한다면 제주(39)가 뒤 페이지에 있을 수 있으므로 2페이지 추가 조회
-      if (rawTotalCount > 1000) {
-        try {
-          const page2Params = new URLSearchParams({
-            serviceKey: serviceKey,
-            MobileOS: "WEB",
-            MobileApp: "DANGJeju",
-            _type: "json",
-            pageNo: "2",
-            numOfRows: "1000",
-          });
-          if (contentTypeId) {
-            page2Params.append("contentTypeId", String(contentTypeId));
-          }
-          const url2 = `https://apis.data.go.kr/B551011/KorService2/petTourSyncList2?${page2Params.toString()}`;
-          const res2 = await fetch(url2);
-          const data2 = await res2.json();
-          const itemsObj2 = data2?.response?.body?.items;
-          if (itemsObj2 && itemsObj2.item) {
-            const page2Items = Array.isArray(itemsObj2.item) ? itemsObj2.item : [itemsObj2.item];
-            allRawItems = allRawItems.concat(page2Items);
-          }
-        } catch {
-          // 2페이지 조회 실패 시 1페이지 데이터로 계속 진행
+        // 3. detailPetTour2에서 response.body.totalCount > 0 또는 items.item이 존재하는 장소만 남김
+        let petInfo = null;
+        if (petTotalCount > 0 && petItems) {
+          petInfo = Array.isArray(petItems) ? petItems[0] : petItems;
+        } else if (petItems) {
+          petInfo = Array.isArray(petItems) ? petItems[0] : petItems;
         }
-      }
 
-      // 전국 데이터 중 제주특별자치도 (areacode === "39") 데이터만 필터링
-      const jejuSyncItems = allRawItems.filter((item) => String(item.areacode) === "39");
+        // 반려동물 정보가 없으면 제외
+        if (!petInfo) {
+          return null;
+        }
 
-      if (jejuSyncItems.length > 0) {
-        targetItems = jejuSyncItems;
-      } else if (source === "auto") {
-        // petTourSyncList2에서 제주 데이터가 0건이면 자동으로 B플랜(areaBasedList2)으로 폴백
-        fallbackHappened = true;
-        fallbackReason = `petTourSyncList2 응답 총 ${rawTotalCount}건 중 제주(areacode=39) 데이터가 0건이어서 areaBasedList2로 자동 전환했습니다.`;
-      }
-    }
+        // 4. 기본 관광정보와 반려동물 정보 병합
+        return {
+          contentId: contentId,
+          title: place.title ? String(place.title) : null,
+          address: place.addr1 ? String(place.addr1) : "",
+          detailAddress: place.addr2 ? String(place.addr2) : "",
+          image: place.firstimage ? String(place.firstimage) : "",
+          thumbnail: place.firstimage2 ? String(place.firstimage2) : "",
+          longitude: place.mapx ? parseFloat(place.mapx) : null,
+          latitude: place.mapy ? parseFloat(place.mapy) : null,
+          contentTypeId: place.contenttypeid ? String(place.contenttypeid) : "",
+          cat1: place.cat1 ? String(place.cat1) : "",
+          cat2: place.cat2 ? String(place.cat2) : "",
+          cat3: place.cat3 ? String(place.cat3) : "",
+          sigunguCode: place.sigungucode ? String(place.sigungucode) : "",
 
-    // -------------------------------------------------------------
-    // 우선순위 B: areaBasedList2 (areaCode=39) 조회
-    // (source === 'areaBasedList2' 이거나 petTourSyncList2에서 0건인 경우)
-    // -------------------------------------------------------------
-    if (source === "areaBasedList2" || (fallbackHappened && targetItems.length === 0)) {
-      sourceApiUsed = "areaBasedList2";
-
-      const areaParams = new URLSearchParams({
-        serviceKey: serviceKey,
-        MobileOS: "WEB",
-        MobileApp: "DANGJeju",
-        _type: "json",
-        areaCode: "39", // 제주특별자치도
-        pageNo: String(pageNo || "1"),
-        numOfRows: String(numOfRows || "100"),
-        arrange: "A", // 제목순 정렬
-      });
-
-      if (contentTypeId) {
-        areaParams.append("contentTypeId", String(contentTypeId));
-      }
-
-      const areaUrl = `https://apis.data.go.kr/B551011/KorService2/areaBasedList2?${areaParams.toString()}`;
-      const areaRes = await fetch(areaUrl);
-      const areaText = await areaRes.text();
-
-      let areaData = null;
-      try {
-        areaData = JSON.parse(areaText);
+          // 필수 반려동물 정보 필드
+          petType: petInfo.acmpyTypeCd || "",
+          petAllowed: petInfo.acmpyPsblCpam || "",
+          petNeed: petInfo.acmpyNeedMtr || "",
+          petInfo: petInfo.etcAcmpyInfo || "",
+          petRisk: petInfo.relaAcdntRiskMtr || "",
+          petFacilities: petInfo.relaPosesFclty || "",
+          petProvidedItems: petInfo.relaFrnshPrdlst || "",
+          petPurchaseItems: petInfo.relaPurcPrdlst || "",
+          petIndoorInfo: petInfo.relaIntLrdl || "",
+        };
       } catch {
-        areaData = null;
+        // 개별 장소 상세조회 오류 시 해당 장소는 안전하게 제외
+        return null;
       }
+    });
 
-      rawHeader = areaData?.response?.header || rawHeader;
-      rawTotalCount = Number(areaData?.response?.body?.totalCount || 0);
+    const checkedResults = await Promise.all(petCheckPromises);
 
-      const itemsObj = areaData?.response?.body?.items;
-      if (itemsObj && itemsObj.item) {
-        targetItems = Array.isArray(itemsObj.item) ? itemsObj.item : [itemsObj.item];
-      }
-    }
-
-    // 원본 데이터에 title 필드가 존재하는지 확인
-    const hasTitle = targetItems.length > 0 && "title" in targetItems[0] && targetItems[0].title !== undefined && targetItems[0].title !== null;
-
-    // 프론트엔드 정규화 포맷 매핑 (가짜 값 생성 금지, 없으면 null 또는 "")
-    const normalizedItems = targetItems.map((item) => ({
-      contentId: item.contentid ? String(item.contentid) : "",
-      title: item.title !== undefined && item.title !== null && String(item.title).trim() !== "" ? String(item.title) : null,
-      address: item.addr1 ? String(item.addr1) : "",
-      detailAddress: item.addr2 ? String(item.addr2) : "",
-      image: item.firstimage ? String(item.firstimage) : "",
-      thumbnail: item.firstimage2 ? String(item.firstimage2) : "",
-      longitude: item.mapx ? parseFloat(item.mapx) : null,
-      latitude: item.mapy ? parseFloat(item.mapy) : null,
-      contentTypeId: item.contenttypeid ? String(item.contenttypeid) : "",
-      cat1: item.cat1 ? String(item.cat1) : "",
-      cat2: item.cat2 ? String(item.cat2) : "",
-      cat3: item.cat3 ? String(item.cat3) : "",
-      sigunguCode: item.sigungucode ? String(item.sigungucode) : "",
-    }));
+    // 5. 반려동물 정보가 확인된 장소만 최종 items로 필터링
+    const matchedItems = checkedResults.filter(Boolean);
 
     return res.status(200).json({
       success: true,
-      sourceApi: sourceApiUsed,
       pageNo: Number(pageNo),
       numOfRows: Number(numOfRows),
-      totalCount: normalizedItems.length,
-      hasTitleInRawData: hasTitle,
-      debug: {
-        apiCalled: sourceApiUsed,
-        resultCode: rawHeader?.resultCode || "0000",
-        resultMsg: rawHeader?.resultMsg || "OK",
-        rawTotalCount: rawTotalCount,
-        jejuFilteredCount: normalizedItems.length,
-        hasAreaCodeParamInPetSync: false,
-        fallbackHappened: fallbackHappened,
-        fallbackReason: fallbackReason || undefined,
-      },
-      items: normalizedItems,
+      sourceTotalCount: sourceTotalCount,
+      checkedCount: checkedCount,
+      petMatchedCount: matchedItems.length,
+      items: matchedItems,
     });
 
   } catch (error) {
-    // API 키나 민감 정보 노출을 엄격히 차단한 에러 응답
     return res.status(500).json({
       success: false,
-      error: "공공데이터 API 처리 중 서버 오류가 발생했습니다.",
+      error: "제주 반려동물 동반 장소 목록 처리 중 서버 오류가 발생했습니다.",
     });
   }
 }
