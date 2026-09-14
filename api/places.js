@@ -65,8 +65,8 @@ export default async function handler(req, res) {
 
     const checkedCount = rawPlaces.length;
 
-    // 2. 요청된 목록의 각 contentid에 대해 detailPetTour2 병렬 호출
-    const petCheckPromises = rawPlaces.map(async (place) => {
+    // 2. 단일 장소의 반려동물 정보(detailPetTour2) 조회 함수
+    async function fetchPetDetailForPlace(place) {
       const contentId = place.contentid ? String(place.contentid) : "";
       if (!contentId) return null;
 
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
         const petTotalCount = Number(petBody?.totalCount || 0);
         const petItems = petBody?.items?.item;
 
-        // 3. detailPetTour2에서 response.body.totalCount > 0 또는 items.item이 존재하는 장소만 남김
+        // detailPetTour2에서 totalCount > 0 또는 items.item이 존재하는 경우만 수집
         let petInfo = null;
         if (petTotalCount > 0 && petItems) {
           petInfo = Array.isArray(petItems) ? petItems[0] : petItems;
@@ -96,12 +96,12 @@ export default async function handler(req, res) {
           petInfo = Array.isArray(petItems) ? petItems[0] : petItems;
         }
 
-        // 반려동물 정보가 없으면 제외
+        // 반려동물 정보가 없으면 목록에서 제외
         if (!petInfo) {
           return null;
         }
 
-        // 4. 기본 관광정보와 반려동물 정보 병합
+        // 기본 관광정보와 반려동물 정보 병합
         return {
           contentId: contentId,
           title: place.title ? String(place.title) : null,
@@ -129,14 +129,23 @@ export default async function handler(req, res) {
           petIndoorInfo: petInfo.relaIntLrdl || "",
         };
       } catch {
-        // 개별 장소 상세조회 오류 시 해당 장소는 안전하게 제외
         return null;
       }
-    });
+    }
 
-    const checkedResults = await Promise.all(petCheckPromises);
+    // 3. 공공데이터 서버 과부하 방지를 위한 동시성 제어 (최대 6개 동시 실행)
+    const CONCURRENCY_LIMIT = 6;
+    const checkedResults = [];
 
-    // 5. 반려동물 정보가 확인된 장소만 최종 items로 필터링
+    for (let i = 0; i < rawPlaces.length; i += CONCURRENCY_LIMIT) {
+      const batch = rawPlaces.slice(i, i + CONCURRENCY_LIMIT);
+      const batchResults = await Promise.all(
+        batch.map((place) => fetchPetDetailForPlace(place))
+      );
+      checkedResults.push(...batchResults);
+    }
+
+    // 4. 반려동물 정보가 확인된 장소만 최종 items로 필터링
     const matchedItems = checkedResults.filter(Boolean);
 
     return res.status(200).json({

@@ -41,7 +41,6 @@ export default async function handler(req, res) {
     } catch {
       return res.status(500).json({
         error: "공공데이터 응답을 JSON으로 변환하지 못했습니다.",
-        response: text,
       });
     }
 

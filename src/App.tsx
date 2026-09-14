@@ -23,11 +23,11 @@ import {
 
 const CATEGORIES: { id: PlaceCategory; name: string; icon: any }[] = [
   { id: 'all', name: '전체보기', icon: Compass },
-  { id: 'cafe', name: '카페·베이커리', icon: Coffee },
   { id: 'spot', name: '관광지·체험', icon: MapPin },
-  { id: 'food', name: '음식점·식당', icon: UtensilsCrossed },
-  { id: 'trail', name: '산책로·해변', icon: Trees },
-  { id: 'stay', name: '숙소·펜션', icon: BedDouble },
+  { id: 'trail', name: '산책로·오름', icon: Trees },
+  { id: 'stay', name: '숙소·리조트', icon: BedDouble },
+  { id: 'cafe', name: '카페', icon: Coffee },
+  { id: 'food', name: '음식점', icon: UtensilsCrossed },
 ];
 
 export default function App() {
@@ -232,20 +232,34 @@ export default function App() {
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               const isActive = selectedCategory === cat.id;
+              const count = cat.id === 'all'
+                ? PLACES.length
+                : PLACES.filter((p) => p.category === cat.id).length;
 
               return (
                 <button
                   key={cat.id}
                   id={`cat-select-btn-${cat.id}`}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`p-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 border ${
+                  className={`p-2.5 sm:p-3 rounded-2xl text-xs font-extrabold transition-all flex items-center justify-between sm:justify-center gap-1.5 border ${
                     isActive
                       ? 'bg-amber-500 text-white border-amber-500 shadow-sm shadow-amber-500/20'
                       : 'bg-[#faf8f5] border-slate-200/80 hover:border-amber-300 text-slate-700 hover:bg-amber-50/50'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{cat.name}</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="truncate">{cat.name}</span>
+                  </div>
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black shrink-0 ${
+                      isActive
+                        ? 'bg-amber-300 text-slate-950'
+                        : 'bg-slate-200/70 text-slate-500'
+                    }`}
+                  >
+                    {count}
+                  </span>
                 </button>
               );
             })}

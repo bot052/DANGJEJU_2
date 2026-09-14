@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import { Place } from '../types';
+import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { ChevronRight, MapPin, Heart } from 'lucide-react';
 
 interface JejuMapProps {
@@ -183,10 +184,16 @@ export default function JejuMap({ places, selectedPlace, onSelectPlace, onOpenDe
         >
           <div className="flex items-center gap-3">
             <img
-              src={selectedPlace.imageUrl}
+              src={selectedPlace.imageUrl || NEUTRAL_IMAGE_PLACEHOLDER}
               alt={selectedPlace.name}
               className="w-14 h-14 rounded-xl object-cover shrink-0"
               referrerPolicy="no-referrer"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
+                  target.src = NEUTRAL_IMAGE_PLACEHOLDER;
+                }
+              }}
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-0.5">
@@ -197,7 +204,7 @@ export default function JejuMap({ places, selectedPlace, onSelectPlace, onOpenDe
                 {selectedPlace.name}
               </h4>
               <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                {selectedPlace.shortDesc}
+                {selectedPlace.petType || selectedPlace.petAllowed || selectedPlace.address}
               </p>
             </div>
             <div className="w-7 h-7 rounded-full bg-amber-50 group-hover:bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 transition-colors">

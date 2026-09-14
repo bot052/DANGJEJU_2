@@ -1,4 +1,5 @@
 import { Place } from '../types';
+import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { X, Heart, MapPin, Trash2, ChevronRight } from 'lucide-react';
 
 interface SavedPlacesDrawerProps {
@@ -44,7 +45,7 @@ export default function SavedPlacesDrawer({
               </div>
               <p className="text-sm font-bold text-slate-700">저장된 장소가 없습니다</p>
               <p className="text-xs text-slate-500 mt-1">
-                마음에 드는 카페, 관광지, 산책로 카드의 하트를 눌러 보관해보세요.
+                마음에 드는 명소 카드의 하트를 눌러 보관해보세요.
               </p>
             </div>
           ) : (
@@ -58,10 +59,16 @@ export default function SavedPlacesDrawer({
                 className="p-3 rounded-xl border border-slate-200 hover:border-amber-400 hover:shadow-xs transition-all cursor-pointer bg-white flex gap-3 items-center group"
               >
                 <img
-                  src={place.imageUrl}
+                  src={place.imageUrl || NEUTRAL_IMAGE_PLACEHOLDER}
                   alt={place.name}
                   className="w-16 h-16 rounded-lg object-cover shrink-0"
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
+                      target.src = NEUTRAL_IMAGE_PLACEHOLDER;
+                    }
+                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1 text-[11px] text-slate-500">
@@ -72,7 +79,7 @@ export default function SavedPlacesDrawer({
                     {place.name}
                   </h4>
                   <p className="text-[11px] text-slate-500 truncate mt-0.5">
-                    {place.petPolicy.sizeDescription}
+                    {place.petAllowed || place.petType || '반려동물 동반 가능'}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">

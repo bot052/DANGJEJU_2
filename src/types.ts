@@ -26,68 +26,39 @@ export interface EventBanner {
 
 export type PlaceCategory = 'all' | 'cafe' | 'spot' | 'food' | 'trail' | 'stay';
 
-export type DogSizeLimit = 'all' | 'small' | 'medium' | 'large'; // all sizes, under 10kg, 10-20kg, large allowed
-
-export type SpacePolicy = 'all' | 'indoor' | 'indoor_carrier' | 'outdoor_only';
-
-export interface PetPolicy {
-  allowedSizes: ('small' | 'medium' | 'large')[];
-  sizeDescription: string; // e.g. "대형견(25kg)까지 전견종 가능" or "10kg 미만 소형견만 가능"
-  spacePolicy: 'indoor_free' | 'indoor_carrier' | 'outdoor_terrace_only' | 'outdoor_and_indoor';
-  spaceDescription: string; // e.g. "실내 1층 목줄 착용 시 동반 가능, 2층은 노펫존"
-  leashRequired: boolean;
-  leashDescription: string; // e.g. "리드줄(2m 이내) 필수 착용"
-  offLeashZoneAvailable: boolean; // 천연잔디 오프리쉬 운동장 유무
-  petFee: number | null; // 0 = free, or e.g. 5000 won
-  petFeeDescription?: string;
-  indoorAllowed: boolean;
-  outdoorAllowed: boolean;
-}
-
-export interface PlaceAmenities {
-  freeParking: boolean;
-  parkingDescription: string;
-  dogMenu: boolean; // 멍푸치노, 수제간식
-  waterBowlProvided: boolean; // 물그릇 제공
-  wasteBagsProvided: boolean; // 배변봉투 비치
-  fencedYard: boolean; // 펜스 운동장
-  photoZone: boolean; // 반려견 포토존
-}
-
 export interface Place {
-  id: string;
-  name: string;
-  category: PlaceCategory;
-  region: RegionId;
-  regionName: string;
-  shortDesc: string;
-  fullDesc: string;
-  address: string;
-  roadAddress: string;
-  parkingInfo: string;
-  businessHours: string;
-  closedDays?: string;
-  contactNumber: string;
-  instagram?: string;
+  id: string;              // contentId
+  contentId: string;       // 한국관광공사 콘텐츠 ID
+  name: string;            // 장소명 (title)
+  title: string;           // 공공데이터 원본 타이틀
+  address: string;         // 기본 주소 + 상세 주소
+  detailAddress?: string;  // 상세 주소
+  imageUrl: string;        // 대표 이미지 (image 또는 thumbnail 또는 기본값)
+  image?: string;          // 원본 대형 이미지
+  thumbnail?: string;      // 원본 썸네일 이미지
   coordinates: {
-    lat: number;
-    lng: number;
+    lat: number;           // 위도 (latitude)
+    lng: number;           // 경도 (longitude)
   };
-  petPolicy: PetPolicy;
-  amenities: PlaceAmenities;
-  cautionNotes: string[];
-  recommendedPoints: string[];
-  imageUrl: string;
-  tags: string[];
-}
+  latitude: number;
+  longitude: number;
+  contentTypeId: string;   // 12: 관광지, 14: 문화시설, 28: 레포츠, 32: 숙박, 39: 음식점
+  cat1?: string;
+  cat2?: string;
+  cat3?: string;
+  sigunguCode?: string;
+  region: RegionId;        // 자동 매핑된 지역 (east, west, jeju_city, seogwipo)
+  regionName: string;      // 지역 표시명 (동부, 서부, 제주시, 서귀포시)
+  category: PlaceCategory; // 유형 (spot, trail, stay, cafe, food)
 
-export interface FilterState {
-  region: RegionId;
-  category: PlaceCategory;
-  dogSize: 'any' | 'small' | 'medium' | 'large';
-  indoorAllowedOnly: boolean;
-  freeParkingOnly: boolean;
-  offLeashYardOnly: boolean;
-  dogMenuOnly: boolean;
-  searchQuery: string;
+  // 공공데이터 TourAPI 4.0 반려동물 전용 정보 (detailPetTour2)
+  petType?: string;          // 동반 가능 구역 (예: 전구역 동반가능, 일부구역 동반가능)
+  petAllowed?: string;       // 동반 가능 견종/범위 (예: 전 견종 동반 가능, 9kg 이하 등)
+  petNeed?: string;          // 필수사항 (예: 목줄 착용, 입마개 착용, 이동장 사용 등)
+  petInfo?: string;          // 주의사항 / 기타 안내
+  petRisk?: string;          // 위험/주의 정보 (훈련사 상시대기, 동의서 작성 등)
+  petFacilities?: string;    // 반려동물 관련시설
+  petProvidedItems?: string; // 비치품목
+  petPurchaseItems?: string; // 구매가능 품목
+  petIndoorInfo?: string;    // 실내 관련 안내
 }
