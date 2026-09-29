@@ -303,8 +303,8 @@ export default function App() {
               const Icon = cat.icon;
               const isActive = selectedCategory === cat.id;
               const count = cat.id === 'all'
-                ? PLACES.length
-                : PLACES.filter((p) => p.category === cat.id).length;
+                ? places.length
+                : places.filter((p) => p.category === cat.id).length;
 
               return (
                 <button
