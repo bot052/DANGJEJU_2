@@ -1,7 +1,6 @@
 import PlaceImage from './PlaceImage';
 import { useEffect, useState } from 'react';
 import { Place } from '../types';
-import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { 
   X, 
   MapPin, 
@@ -108,12 +107,6 @@ export default function PlaceDetailModal({
             alt={place.name}
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
-            onError={(e) => {
-              const target = e.currentTarget;
-              if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
-                target.src = NEUTRAL_IMAGE_PLACEHOLDER;
-              }
-            }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
