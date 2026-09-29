@@ -320,6 +320,8 @@ export default function PlaceDetailModal({
                   네이버 지도로 보기
                 </a>
               </div>
+            </div>
+          )}
 
           {activeTab === 'tips' && (
             <div className="space-y-4">
