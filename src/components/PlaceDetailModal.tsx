@@ -1,20 +1,22 @@
 import PlaceImage from './PlaceImage';
 import { useEffect, useState } from 'react';
 import { Place } from '../types';
+import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { 
   X, 
   MapPin, 
-  Clock, 
-  Phone, 
-  Car, 
-  ShieldAlert, 
   Heart, 
   Share2, 
   Check, 
   Dog, 
-  Sparkles,
+  AlertTriangle,
+  ShoppingBag,
+  Gift,
+  Building,
+  Home,
   ExternalLink,
-  Copy
+  Copy,
+  Info
 } from 'lucide-react';
 
 const TRI_LABEL = { TRUE: '가능/제공', FALSE: '불가/미제공', UNKNOWN: '미확인' } as const;
@@ -43,6 +45,14 @@ interface PlaceDetailModalProps {
   onToggleSave: (placeId: string) => void;
 }
 
+const CATEGORY_NAMES: Record<string, string> = {
+  spot: '관광지',
+  trail: '산책로',
+  stay: '숙소',
+  cafe: '카페',
+  food: '음식점',
+};
+
 export default function PlaceDetailModal({
   place,
   isOpen,
@@ -51,7 +61,7 @@ export default function PlaceDetailModal({
   onToggleSave,
 }: PlaceDetailModalProps) {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'policy' | 'location' | 'tips'>('policy');
+  const [activeTab, setActiveTab] = useState<'pet' | 'location'>('pet');
 
   // Each open / place switch starts on the first tab ("반려동물 정보").
   useEffect(() => {
@@ -63,7 +73,7 @@ export default function PlaceDetailModal({
   if (!isOpen || !place) return null;
 
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(place.roadAddress || place.address);
+    navigator.clipboard.writeText(place.address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -98,8 +108,14 @@ export default function PlaceDetailModal({
             alt={place.name}
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
+                target.src = NEUTRAL_IMAGE_PLACEHOLDER;
+              }
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 
           {/* Close & Action Buttons */}
           <div className="absolute top-4 right-4 flex items-center gap-2">
@@ -133,18 +149,23 @@ export default function PlaceDetailModal({
           {/* Title Info over Hero */}
           <div className="absolute bottom-4 left-5 right-5 text-white">
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500 text-white">
+              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white">
                 {place.regionName}
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-md">
                 {place.petInformationLabel}
               </span>
+              {place.petType && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/90 text-white backdrop-blur-md">
+                  🐾 {place.petType}
+                </span>
+              )}
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
               {place.name}
             </h2>
             <p className="text-xs sm:text-sm text-slate-200 mt-1 line-clamp-1">
-              {place.shortDesc}
+              {place.address}
             </p>
           </div>
         </div>
@@ -152,9 +173,9 @@ export default function PlaceDetailModal({
         {/* Navigation Tabs */}
         <div className="flex border-b border-slate-100 bg-slate-50/80 px-5 pt-3 gap-2 flex-shrink-0">
           <button
-            onClick={() => setActiveTab('policy')}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'policy'
+            onClick={() => setActiveTab('pet')}
+            className={`pb-3 px-3 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+              activeTab === 'pet'
                 ? 'border-amber-500 text-amber-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
@@ -164,31 +185,20 @@ export default function PlaceDetailModal({
           </button>
           <button
             onClick={() => setActiveTab('location')}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
+            className={`pb-3 px-3 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
               activeTab === 'location'
                 ? 'border-amber-500 text-amber-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
             }`}
           >
             <MapPin className="w-4 h-4" />
-            위치 & 주차 안내
-          </button>
-          <button
-            onClick={() => setActiveTab('tips')}
-            className={`pb-3 px-3 text-sm font-semibold border-b-2 transition-all flex items-center gap-1.5 ${
-              activeTab === 'tips'
-                ? 'border-amber-500 text-amber-600'
-                : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            편의 & 주의사항
+            위치 & 길찾기
           </button>
         </div>
 
         {/* Modal Body Content */}
-        <div className="p-5 sm:p-6 overflow-y-auto space-y-5 flex-1">
-          {activeTab === 'policy' && (
+        <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
+          {activeTab === 'pet' && (
             <div className="space-y-4">
               <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
                 <h4 className="text-sm font-bold text-slate-800">{place.petInformationLabel}</h4>
@@ -233,7 +243,7 @@ export default function PlaceDetailModal({
 
           {activeTab === 'location' && (
             <div className="space-y-4">
-              {/* Address with copy */}
+              {/* 주소 정보 및 복사 버튼 */}
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-start gap-2.5">
@@ -248,7 +258,7 @@ export default function PlaceDetailModal({
                   </div>
                   <button
                     onClick={handleCopyAddress}
-                    className="inline-flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
+                    className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                     {copied ? '복사완료' : '주소 복사'}
@@ -289,13 +299,13 @@ export default function PlaceDetailModal({
                 )}
               </div>
 
-              {/* Map link buttons */}
+              {/* 지도 길찾기 버튼 */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <a
                   href={`https://map.kakao.com/link/search/${encodeURIComponent(place.name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold text-xs transition-colors shadow-xs"
+                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-900 font-black text-xs transition-colors shadow-xs"
                 >
                   <ExternalLink className="w-4 h-4" />
                   카카오맵으로 길찾기
@@ -304,14 +314,12 @@ export default function PlaceDetailModal({
                   href={`https://map.naver.com/v5/search/${encodeURIComponent(place.name)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs transition-colors shadow-xs"
+                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs transition-colors shadow-xs"
                 >
                   <ExternalLink className="w-4 h-4" />
                   네이버 지도로 보기
                 </a>
               </div>
-            </div>
-          )}
 
           {activeTab === 'tips' && (
             <div className="space-y-4">
@@ -385,7 +393,7 @@ export default function PlaceDetailModal({
           <span>제주 6팀 「댕제주」 · 서비스 및 KTO 관광 정보</span>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-800 transition-colors"
+            className="px-4 py-2 rounded-xl bg-slate-900 text-white font-bold hover:bg-slate-800 transition-colors"
           >
             닫기
           </button>

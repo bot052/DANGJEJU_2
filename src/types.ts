@@ -79,20 +79,15 @@ export interface PlaceAmenities {
 }
 
 export interface Place {
-  id: string;
-  name: string;
-  category: PlaceCategory;
-  region: RegionId;
-  regionName: string;
-  shortDesc: string;
-  fullDesc: string;
-  address: string;
-  roadAddress: string;
-  parkingInfo: string;
-  businessHours: string;
-  closedDays?: string;
-  contactNumber: string;
-  instagram?: string;
+  id: string;              // contentId
+  contentId: string;       // 한국관광공사 콘텐츠 ID
+  name: string;            // 장소명 (title)
+  title: string;           // 공공데이터 원본 타이틀
+  address: string;         // 기본 주소 + 상세 주소
+  detailAddress?: string;  // 상세 주소
+  imageUrl: string;        // 대표 이미지 (image 또는 thumbnail 또는 기본값)
+  image?: string;          // 원본 대형 이미지
+  thumbnail?: string;      // 원본 썸네일 이미지
   coordinates: {
     lat: number;
     lng: number;
@@ -113,13 +108,14 @@ export interface Place {
   petScore?: number;
 }
 
-export interface FilterState {
-  region: RegionId;
-  category: PlaceCategory;
-  dogSize: 'any' | 'small' | 'medium' | 'large';
-  indoorAllowedOnly: boolean;
-  freeParkingOnly: boolean;
-  offLeashYardOnly: boolean;
-  dogMenuOnly: boolean;
-  searchQuery: string;
+  // 공공데이터 TourAPI 4.0 반려동물 전용 정보 (detailPetTour2)
+  petType?: string;          // 동반 가능 구역 (예: 전구역 동반가능, 일부구역 동반가능)
+  petAllowed?: string;       // 동반 가능 견종/범위 (예: 전 견종 동반 가능, 9kg 이하 등)
+  petNeed?: string;          // 필수사항 (예: 목줄 착용, 입마개 착용, 이동장 사용 등)
+  petInfo?: string;          // 주의사항 / 기타 안내
+  petRisk?: string;          // 위험/주의 정보 (훈련사 상시대기, 동의서 작성 등)
+  petFacilities?: string;    // 반려동물 관련시설
+  petProvidedItems?: string; // 비치품목
+  petPurchaseItems?: string; // 구매가능 품목
+  petIndoorInfo?: string;    // 실내 관련 안내
 }
