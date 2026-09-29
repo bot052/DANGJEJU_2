@@ -1,0 +1,720 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isActiveAdmin() {
+      return request.auth != null && isActiveAdminUid(request.auth.uid);
+    }
+
+    function isActiveAdminUid(uid) {
+      let adminPath = /databases/$(database)/documents/admins/$(uid);
+      let admin = get(adminPath).data;
+      return exists(adminPath)
+        && admin.role == 'admin'
+        && admin.active == true;
+    }
+
+    function validTriStates(values) {
+      return values.hasOnly(['TRUE', 'FALSE', 'UNKNOWN']);
+    }
+
+    function optionalText(data, key, maxLength) {
+      return !(key in data) || data[key] == null || (data[key] is string && data[key].size() <= maxLength);
+    }
+
+    function optionalList(data, key, maxSize) {
+      return !(key in data) || data[key] == null || (data[key] is list && data[key].size() <= maxSize);
+    }
+
+    function optionalHttpUrl(data, key) {
+      return !(key in data) || data[key] == null || data[key] == ''
+        || (data[key] is string && data[key].size() <= 500 && data[key].matches('^https?://.+$'));
+    }
+
+    function optionalInstagramUrl(data, key) {
+      return !(key in data) || data[key] == null || data[key] == ''
+        || (data[key] is string && data[key].size() <= 500
+          && data[key].matches('^https?://([A-Za-z0-9-]+\\.)*instagram\\.com([/:?#].*)?$'));
+    }
+
+    function validPetPolicy(data) {
+      let policy = data.petPolicy;
+      let allowedBreeds = policy.allowedBreeds;
+      let allowedSizes = policy.allowedSizes;
+      let sizeDescription = policy.sizeDescription;
+      let spacePolicy = policy.spacePolicy;
+      let spaceDescription = policy.spaceDescription;
+      let leashDescription = policy.leashDescription;
+      let petFee = policy.petFee;
+      let petFeeDescription = policy.petFeeDescription;
+      let nullableValues = [
+        allowedBreeds, allowedSizes, sizeDescription, spacePolicy, spaceDescription,
+        leashDescription, petFee, petFeeDescription, policy.otherPetPolicy
+      ];
+      return policy is map
+        && policy.size() == 19
+        && policy.petInformationStatus in ['KTO_OVERLAY_FOUND', 'ADMIN_CONFIRMED', 'UNKNOWN']
+        && validTriStates([
+          policy.petAcceptance, policy.smallDogAllowed, policy.mediumDogAllowed,
+          policy.largeDogAllowed, policy.indoorAllowed, policy.outdoorAllowed,
+          policy.carrierRequired, policy.leashRequired, policy.offLeashZoneAvailable
+        ])
+        && (nullableValues.hasOnly([null]) || (
+          !nullableValues.hasAny([null]) ? (
+            allowedBreeds is list && allowedBreeds.size() <= 30
+            && allowedSizes is list && allowedSizes.size() <= 30
+            && sizeDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+            && spacePolicy.matches('(?s)^.{0,500}$')
+            && spaceDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+            && leashDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+            && petFee is int && petFee >= 0 && petFee <= 1000000
+            && petFeeDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+            && policy.otherPetPolicy.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+          ) : (
+            ((allowedBreeds is list && allowedBreeds.size() <= 30) || allowedBreeds == null)
+            && ((allowedSizes is list && allowedSizes.size() <= 30) || allowedSizes == null)
+            && ((sizeDescription is string && sizeDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || sizeDescription == null)
+            && ((spacePolicy is string && spacePolicy.matches('(?s)^.{0,500}$')) || spacePolicy == null)
+            && ((spaceDescription is string && spaceDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || spaceDescription == null)
+            && ((leashDescription is string && leashDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || leashDescription == null)
+            && ((petFee is int && petFee >= 0 && petFee <= 1000000) || petFee == null)
+            && ((petFeeDescription is string && petFeeDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || petFeeDescription == null)
+            && ((policy.otherPetPolicy is string
+              && policy.otherPetPolicy.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$'))
+              || policy.otherPetPolicy == null)
+          )
+        ));
+    }
+
+    function validAmenities(data) {
+      let amenity = data.amenities;
+      let parkingDescription = amenity.parkingDescription;
+      return amenity is map
+        && amenity.size() == 7
+        && validTriStates([
+          amenity.freeParking, amenity.dogMenu, amenity.waterBowlProvided,
+          amenity.wasteBagsProvided, amenity.fencedYard, amenity.photoZone
+        ])
+        && ((parkingDescription is string
+          && parkingDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$'))
+          || parkingDescription == null);
+    }
+
+    function validPetDetails(details) {
+      return details is map
+        && details.keys().hasOnly([
+          'acmpyTypeCd', 'acmpyNeedMtr', 'acmpyPsblCpam', 'etcAcmpyInfo',
+          'relaAcdntRiskMtr', 'relaFrnshPrdlst', 'relaPosesFclty',
+          'relaPurcPrdlst', 'relaRntlPrdlst'
+        ])
+        && (details.size() == 9
+          ? validCompletePetDetails(details)
+          : optionalText(details, 'acmpyTypeCd', 4000)
+            && optionalText(details, 'acmpyNeedMtr', 4000)
+            && optionalText(details, 'acmpyPsblCpam', 4000)
+            && optionalText(details, 'etcAcmpyInfo', 4000)
+            && optionalText(details, 'relaAcdntRiskMtr', 4000)
+            && optionalText(details, 'relaFrnshPrdlst', 4000)
+            && optionalText(details, 'relaPosesFclty', 4000)
+            && optionalText(details, 'relaPurcPrdlst', 4000)
+            && optionalText(details, 'relaRntlPrdlst', 4000));
+    }
+
+    function validCompletePetDetails(details) {
+      let acmpyTypeCd = details.acmpyTypeCd;
+      let acmpyNeedMtr = details.acmpyNeedMtr;
+      let acmpyPsblCpam = details.acmpyPsblCpam;
+      let etcAcmpyInfo = details.etcAcmpyInfo;
+      let relaAcdntRiskMtr = details.relaAcdntRiskMtr;
+      let relaFrnshPrdlst = details.relaFrnshPrdlst;
+      let relaPosesFclty = details.relaPosesFclty;
+      let relaPurcPrdlst = details.relaPurcPrdlst;
+      let relaRntlPrdlst = details.relaRntlPrdlst;
+      let hasNull = details.values().hasAny([null]);
+      return !hasNull ? (
+        acmpyTypeCd.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && acmpyNeedMtr.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && acmpyPsblCpam.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && etcAcmpyInfo.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && relaAcdntRiskMtr.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && relaFrnshPrdlst.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && relaPosesFclty.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && relaPurcPrdlst.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+        && relaRntlPrdlst.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')
+      ) : (
+        ((acmpyTypeCd is string && acmpyTypeCd.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || acmpyTypeCd == null)
+        && ((acmpyNeedMtr is string && acmpyNeedMtr.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || acmpyNeedMtr == null)
+        && ((acmpyPsblCpam is string && acmpyPsblCpam.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || acmpyPsblCpam == null)
+        && ((etcAcmpyInfo is string && etcAcmpyInfo.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || etcAcmpyInfo == null)
+        && ((relaAcdntRiskMtr is string && relaAcdntRiskMtr.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || relaAcdntRiskMtr == null)
+        && ((relaFrnshPrdlst is string && relaFrnshPrdlst.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || relaFrnshPrdlst == null)
+        && ((relaPosesFclty is string && relaPosesFclty.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || relaPosesFclty == null)
+        && ((relaPurcPrdlst is string && relaPurcPrdlst.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || relaPurcPrdlst == null)
+        && ((relaRntlPrdlst is string && relaRntlPrdlst.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$')) || relaRntlPrdlst == null)
+      );
+    }
+
+    function validAdminOverrides(data) {
+      return !('adminOverrides' in data) || (
+        data.adminOverrides is map
+        && data.adminOverrides.size() == 1
+        && validPetDetails(data.adminOverrides.petDetails)
+      );
+    }
+
+    function validCompleteAdminOverrides(data) {
+      let overrides = data.adminOverrides;
+      let details = overrides.petDetails;
+      return overrides is map
+        && overrides.size() == 1
+        && details is map
+        && details.size() == 9
+        && validCompletePetDetails(details);
+    }
+
+    function rootEditableFieldNames() {
+      return [
+        'name', 'serviceCategory', 'regionArea', 'address', 'roadAddress', 'latitude', 'longitude',
+        'phone', 'primaryImageUrl', 'secondaryImageUrl', 'shortDescription', 'fullDescription',
+        'parkingInfo', 'businessHours', 'closedDays', 'instagramUrl', 'tags',
+        'recommendedPoints', 'cautionNotes'
+      ];
+    }
+
+    function petPolicyEditableFieldNames() {
+      return [
+        'petPolicy.petInformationStatus', 'petPolicy.petAcceptance', 'petPolicy.smallDogAllowed',
+        'petPolicy.mediumDogAllowed', 'petPolicy.largeDogAllowed', 'petPolicy.indoorAllowed',
+        'petPolicy.outdoorAllowed', 'petPolicy.carrierRequired', 'petPolicy.leashRequired',
+        'petPolicy.offLeashZoneAvailable', 'petPolicy.allowedBreeds', 'petPolicy.allowedSizes',
+        'petPolicy.sizeDescription', 'petPolicy.spacePolicy', 'petPolicy.spaceDescription',
+        'petPolicy.leashDescription', 'petPolicy.petFee', 'petPolicy.petFeeDescription',
+        'petPolicy.otherPetPolicy'
+      ];
+    }
+
+    function petDetailsEditableFieldNames() {
+      return [
+        'petDetails.acmpyTypeCd', 'petDetails.acmpyNeedMtr', 'petDetails.acmpyPsblCpam',
+        'petDetails.etcAcmpyInfo', 'petDetails.relaAcdntRiskMtr', 'petDetails.relaFrnshPrdlst',
+        'petDetails.relaPosesFclty', 'petDetails.relaPurcPrdlst', 'petDetails.relaRntlPrdlst'
+      ];
+    }
+
+    function amenitiesEditableFieldNames() {
+      return [
+        'amenities.freeParking', 'amenities.dogMenu', 'amenities.waterBowlProvided',
+        'amenities.wasteBagsProvided', 'amenities.fencedYard', 'amenities.photoZone',
+        'amenities.parkingDescription'
+      ];
+    }
+
+    function allNestedEditableFieldNames() {
+      return [
+        'petPolicy.petInformationStatus', 'petPolicy.petAcceptance', 'petPolicy.smallDogAllowed',
+        'petPolicy.mediumDogAllowed', 'petPolicy.largeDogAllowed', 'petPolicy.indoorAllowed',
+        'petPolicy.outdoorAllowed', 'petPolicy.carrierRequired', 'petPolicy.leashRequired',
+        'petPolicy.offLeashZoneAvailable', 'petPolicy.allowedBreeds', 'petPolicy.allowedSizes',
+        'petPolicy.sizeDescription', 'petPolicy.spacePolicy', 'petPolicy.spaceDescription',
+        'petPolicy.leashDescription', 'petPolicy.petFee', 'petPolicy.petFeeDescription',
+        'petPolicy.otherPetPolicy', 'petDetails.acmpyTypeCd', 'petDetails.acmpyNeedMtr',
+        'petDetails.acmpyPsblCpam', 'petDetails.etcAcmpyInfo', 'petDetails.relaAcdntRiskMtr',
+        'petDetails.relaFrnshPrdlst', 'petDetails.relaPosesFclty', 'petDetails.relaPurcPrdlst',
+        'petDetails.relaRntlPrdlst', 'amenities.freeParking', 'amenities.dogMenu',
+        'amenities.waterBowlProvided', 'amenities.wasteBagsProvided', 'amenities.fencedYard',
+        'amenities.photoZone', 'amenities.parkingDescription'
+      ];
+    }
+
+    function allEditableFieldNames() {
+      return [
+        'address', 'amenities.dogMenu', 'amenities.fencedYard', 'amenities.freeParking',
+        'amenities.parkingDescription', 'amenities.photoZone', 'amenities.wasteBagsProvided',
+        'amenities.waterBowlProvided', 'businessHours', 'cautionNotes', 'closedDays',
+        'fullDescription', 'instagramUrl', 'latitude', 'longitude', 'name', 'parkingInfo',
+        'petDetails.acmpyNeedMtr', 'petDetails.acmpyPsblCpam', 'petDetails.acmpyTypeCd',
+        'petDetails.etcAcmpyInfo', 'petDetails.relaAcdntRiskMtr', 'petDetails.relaFrnshPrdlst',
+        'petDetails.relaPosesFclty', 'petDetails.relaPurcPrdlst', 'petDetails.relaRntlPrdlst',
+        'petPolicy.allowedBreeds', 'petPolicy.allowedSizes', 'petPolicy.carrierRequired',
+        'petPolicy.indoorAllowed', 'petPolicy.largeDogAllowed', 'petPolicy.leashDescription',
+        'petPolicy.leashRequired', 'petPolicy.mediumDogAllowed',
+        'petPolicy.offLeashZoneAvailable', 'petPolicy.otherPetPolicy',
+        'petPolicy.outdoorAllowed', 'petPolicy.petAcceptance', 'petPolicy.petFee',
+        'petPolicy.petFeeDescription', 'petPolicy.petInformationStatus',
+        'petPolicy.sizeDescription', 'petPolicy.smallDogAllowed',
+        'petPolicy.spaceDescription', 'petPolicy.spacePolicy', 'phone', 'primaryImageUrl',
+        'recommendedPoints', 'regionArea', 'roadAddress', 'secondaryImageUrl',
+        'serviceCategory', 'shortDescription', 'tags'
+      ];
+    }
+
+    function allUserVisibleFieldNames() {
+      return [
+        'address', 'amenities.dogMenu', 'amenities.fencedYard', 'amenities.freeParking',
+        'amenities.parkingDescription', 'amenities.photoZone', 'amenities.wasteBagsProvided',
+        'amenities.waterBowlProvided', 'businessHours', 'cautionNotes', 'closedDays',
+        'fullDescription', 'instagramUrl', 'latitude', 'longitude', 'name', 'parkingInfo',
+        'petDetails.acmpyNeedMtr', 'petDetails.acmpyPsblCpam', 'petDetails.acmpyTypeCd',
+        'petDetails.etcAcmpyInfo', 'petDetails.relaAcdntRiskMtr', 'petDetails.relaFrnshPrdlst',
+        'petDetails.relaPosesFclty', 'petDetails.relaPurcPrdlst', 'petDetails.relaRntlPrdlst',
+        'petPolicy.allowedBreeds', 'petPolicy.allowedSizes', 'petPolicy.carrierRequired',
+        'petPolicy.indoorAllowed', 'petPolicy.largeDogAllowed', 'petPolicy.leashDescription',
+        'petPolicy.leashRequired', 'petPolicy.mediumDogAllowed',
+        'petPolicy.offLeashZoneAvailable', 'petPolicy.otherPetPolicy',
+        'petPolicy.outdoorAllowed', 'petPolicy.petAcceptance', 'petPolicy.petFee',
+        'petPolicy.petFeeDescription', 'petPolicy.sizeDescription',
+        'petPolicy.smallDogAllowed', 'petPolicy.spaceDescription', 'petPolicy.spacePolicy',
+        'phone', 'primaryImageUrl', 'recommendedPoints', 'regionArea', 'roadAddress',
+        'secondaryImageUrl', 'serviceCategory', 'shortDescription', 'tags'
+      ];
+    }
+
+    function allTopLevelEditableFieldNames() {
+      return [
+        'address', 'adminOverrides', 'amenities', 'businessHours', 'cautionNotes', 'closedDays',
+        'fullDescription', 'instagramUrl', 'latitude', 'longitude', 'name', 'parkingInfo',
+        'petPolicy', 'phone', 'primaryImageUrl', 'recommendedPoints', 'regionArea', 'roadAddress',
+        'secondaryImageUrl', 'serviceCategory', 'shortDescription', 'tags'
+      ];
+    }
+
+    function validNestedChangedFields(changed, changedTopLevel) {
+      let policyChanged = changedTopLevel.hasAny(['petPolicy']);
+      let detailsChanged = changedTopLevel.hasAny(['adminOverrides']);
+      let amenitiesChanged = changedTopLevel.hasAny(['amenities']);
+      return policyChanged
+        ? (detailsChanged
+          ? (amenitiesChanged
+            ? changed.hasOnly(allNestedEditableFieldNames())
+            : changed.hasOnly(petPolicyEditableFieldNames().toSet()
+              .union(petDetailsEditableFieldNames().toSet())))
+          : (amenitiesChanged
+            ? changed.hasOnly(petPolicyEditableFieldNames().toSet()
+              .union(amenitiesEditableFieldNames().toSet()))
+            : changed.hasOnly(petPolicyEditableFieldNames())))
+        : (detailsChanged
+          ? (amenitiesChanged
+            ? changed.hasOnly(petDetailsEditableFieldNames().toSet()
+              .union(amenitiesEditableFieldNames().toSet()))
+            : changed.hasOnly(petDetailsEditableFieldNames()))
+          : (amenitiesChanged
+            ? changed.hasOnly(amenitiesEditableFieldNames())
+            : changed.size() == 0));
+    }
+
+    function validPartialChangedFieldNames(changedFields, changedTopLevel) {
+      let nestedTopLevel = ['petPolicy', 'amenities', 'adminOverrides'].toSet();
+      let changedRootFields = changedTopLevel.difference(nestedTopLevel);
+      let changedNestedFields = changedFields.difference(changedRootFields);
+      return changedRootFields.hasOnly(rootEditableFieldNames())
+        && changedFields.hasAll(changedRootFields)
+        && validNestedChangedFields(changedNestedFields, changedTopLevel);
+    }
+
+    function petPolicyFactKeys() {
+      return [
+        'petAcceptance', 'smallDogAllowed', 'mediumDogAllowed', 'largeDogAllowed',
+        'indoorAllowed', 'outdoorAllowed', 'carrierRequired', 'leashRequired',
+        'offLeashZoneAvailable', 'allowedBreeds', 'allowedSizes', 'sizeDescription',
+        'spacePolicy', 'spaceDescription', 'leashDescription', 'petFee',
+        'petFeeDescription', 'otherPetPolicy'
+      ];
+    }
+
+    function clearableRootFieldNames() {
+      return [
+        'address', 'roadAddress', 'latitude', 'longitude', 'phone', 'primaryImageUrl',
+        'secondaryImageUrl', 'shortDescription', 'fullDescription', 'parkingInfo',
+        'businessHours', 'closedDays', 'instagramUrl', 'tags', 'recommendedPoints', 'cautionNotes'
+      ];
+    }
+
+    function stringClearableRootFieldNames() {
+      return [
+        'address', 'roadAddress', 'phone', 'primaryImageUrl', 'secondaryImageUrl',
+        'shortDescription', 'fullDescription', 'parkingInfo', 'businessHours',
+        'closedDays', 'instagramUrl'
+      ];
+    }
+
+    function validSingleClearedValue(data, field) {
+      return (field in stringClearableRootFieldNames() && data[field] == '')
+        || (field in ['latitude', 'longitude'] && data[field] == null)
+        || (field in ['tags', 'recommendedPoints', 'cautionNotes'] && data[field] == []);
+    }
+
+    function validListedClearedValues(data, clearedList) {
+      let count = clearedList.size();
+      return validSingleClearedValue(data, clearedList[0])
+        && (count == 1 || (validSingleClearedValue(data, clearedList[1])
+        && (count == 2 || (validSingleClearedValue(data, clearedList[2])
+        && (count == 3 || (validSingleClearedValue(data, clearedList[3])
+        && (count == 4 || (validSingleClearedValue(data, clearedList[4])
+        && (count == 5 || (validSingleClearedValue(data, clearedList[5])
+        && (count == 6 || (validSingleClearedValue(data, clearedList[6])
+        && (count == 7 || (validSingleClearedValue(data, clearedList[7])
+        && (count == 8 || (validSingleClearedValue(data, clearedList[8])
+        && (count == 9 || (validSingleClearedValue(data, clearedList[9])
+        && (count == 10 || (validSingleClearedValue(data, clearedList[10])
+        && (count == 11 || (validSingleClearedValue(data, clearedList[11])
+        && (count == 12 || (validSingleClearedValue(data, clearedList[12])
+        && (count == 13 || (validSingleClearedValue(data, clearedList[13])
+        && (count == 14 || validSingleClearedValue(data, clearedList[14]))
+        ))))))))))))))))))))))))));
+    }
+
+    function validAllClearedValues(data) {
+      return [
+          data.address, data.roadAddress, data.phone, data.primaryImageUrl,
+          data.secondaryImageUrl, data.shortDescription, data.fullDescription,
+          data.parkingInfo, data.businessHours, data.closedDays, data.instagramUrl
+        ].hasOnly([''])
+        && data.latitude == null
+        && data.longitude == null
+        && data.tags == []
+        && data.recommendedPoints == []
+        && data.cautionNotes == [];
+    }
+
+    function validClearedFields(data, clearedList) {
+      let cleared = clearedList.toSet();
+      return cleared.hasOnly(clearableRootFieldNames())
+        && (cleared.size() == 16
+          ? validAllClearedValues(data)
+          : clearedList.size() <= 15
+            && validListedClearedValues(data, clearedList));
+    }
+
+    function validSingleFieldClearedAudit(data, oldData, admin) {
+      let clearedList = admin.clearedFields;
+      let cleared = clearedList.toSet();
+      let oldCleared = 'manualAdmin' in oldData
+          && oldData.manualAdmin is map
+          && 'clearedFields' in oldData.manualAdmin
+          && oldData.manualAdmin.clearedFields is list
+        ? oldData.manualAdmin.clearedFields.toSet()
+        : [].toSet();
+      let changedField = admin.changedFields[0];
+      let auditDelta = cleared.difference(oldCleared)
+        .union(oldCleared.difference(cleared));
+      return clearedList.size() == cleared.size()
+        && cleared.hasOnly(clearableRootFieldNames())
+        && auditDelta.hasOnly([changedField])
+        && (!cleared.hasAny([changedField])
+          || validSingleClearedValue(data, changedField));
+    }
+
+    function validPetPolicyProvenance(data, oldData) {
+      let policy = data.petPolicy;
+      let oldPolicy = oldData.petPolicy;
+      let policyAffected = policy.diff(oldPolicy).affectedKeys();
+      let factsChanged = policyAffected.hasAny(petPolicyFactKeys());
+      let statusChanged = policy.petInformationStatus != oldPolicy.petInformationStatus;
+      return (factsChanged && policy.petInformationStatus == 'ADMIN_CONFIRMED')
+        || (!factsChanged && !statusChanged);
+    }
+
+    function validPetProvenance(data, oldData, affected) {
+      // Any admin override is a pet fact edit, so avoid recomputing the policy diff.
+      return affected.hasAny(['adminOverrides'])
+        ? data.petPolicy.petInformationStatus == 'ADMIN_CONFIRMED'
+        : validPetPolicyProvenance(data, oldData);
+    }
+
+    function validCompleteManualAdmin(data, oldData, displayAffected) {
+      let admin = data.manualAdmin;
+      let changedFields = admin.changedFields.toSet();
+      let changedTopLevel = admin.changedTopLevel.toSet();
+      let managedFields = admin.managedFields.toSet();
+      let oldManagedFields = 'manualAdmin' in oldData && 'managedFields' in oldData.manualAdmin
+        ? oldData.manualAdmin.managedFields.toSet()
+        : [].toSet();
+      return admin is map
+        && admin.size() == 6
+        && admin.source == 'ADMIN_UI'
+        && admin.updatedAt == request.time
+        && (admin.changedFields.size() == 54
+          ? admin.changedFields == allEditableFieldNames()
+            && admin.managedFields == admin.changedFields
+          : admin.changedFields.size() == 53
+            && admin.changedFields == allUserVisibleFieldNames()
+            && admin.managedFields is list
+            && admin.managedFields.size() <= 60
+            && managedFields == oldManagedFields.union(changedFields))
+        && admin.changedTopLevel is list
+        && admin.changedTopLevel.size() == changedTopLevel.size()
+        && changedTopLevel == displayAffected
+        // The caller already established that displayAffected has exactly 22 entries.
+        && displayAffected.hasOnly(allTopLevelEditableFieldNames())
+        && (admin.clearedFields == [] || (
+          admin.clearedFields is list
+          && admin.clearedFields.size() <= 60
+          && validClearedFields(data, admin.clearedFields)
+        ));
+    }
+
+    function validPartialManualAdmin(data, oldData, displayAffected) {
+      let admin = data.manualAdmin;
+      let changedFields = admin.changedFields.toSet();
+      let changedTopLevel = admin.changedTopLevel.toSet();
+      let managedFields = admin.managedFields.toSet();
+      let oldManagedFields = 'manualAdmin' in oldData && 'managedFields' in oldData.manualAdmin
+        ? oldData.manualAdmin.managedFields.toSet()
+        : [].toSet();
+      return admin is map
+        && admin.size() == 6
+        && admin.source == 'ADMIN_UI'
+        && admin.updatedAt == request.time
+        && admin.changedFields is list
+        && admin.changedFields.size() > 0
+        && admin.changedFields.size() <= 60
+        && admin.changedTopLevel is list
+        && admin.changedTopLevel.size() > 0
+        && admin.changedTopLevel.size() == changedTopLevel.size()
+        && changedTopLevel == displayAffected
+        && validPartialChangedFieldNames(changedFields, changedTopLevel)
+        && admin.clearedFields is list
+        && admin.clearedFields.size() <= 60
+        && (admin.changedFields.size() == 1
+          ? validSingleFieldClearedAudit(data, oldData, admin)
+          : admin.clearedFields.size() == 0
+            || validClearedFields(data, admin.clearedFields))
+        && admin.managedFields is list
+        && admin.managedFields.size() <= 60
+        && managedFields == oldManagedFields.union(changedFields);
+    }
+
+    function validSearch(data, oldData) {
+      let search = data.search;
+      let basicScore = search.basicScore;
+      let petScore = search.petScore;
+      let petTier = search.petTier;
+      let petTierRank = petTier == 'RICH' ? 3 : petTier == 'PARTIAL' ? 2 : petTier == 'BASIC' ? 1 : 0;
+      return search is map
+        && search.size() == 14
+        && search.version == 1
+        && search.scoreVersion == 'hank-place-field-audit-v1'
+        && search.region in ['JEJU_CITY', 'SEOGWIPO_CITY', 'EAST', 'WEST', 'UNKNOWN']
+        && search.category in ['ATTRACTION', 'CAFE', 'FOOD', 'SHOPPING', 'STAY', 'LEISURE', 'CULTURE', 'EVENT', 'UNKNOWN']
+        && search.regionBasis in ['SERVICE_REGION', 'ADDRESS_EAST', 'ADDRESS_WEST', 'MUNICIPALITY', 'UNKNOWN']
+        && search.categoryBasis in ['SERVICE_CATEGORY', 'KTO_CONTENT_TYPE', 'KTO_CAT3', 'TITLE_FALLBACK', 'UNKNOWN']
+        && basicScore is int && basicScore in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        && petScore is int && petScore in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        // Numeric equality permits floats, so preserve the explicit integer check.
+        && search.totalScore is int
+        && search.totalScore == basicScore + petScore
+        // The exhaustive branches below are the petTier enum validation.
+        && ((petTier == 'RICH' && petScore >= 5)
+          || (petTier == 'PARTIAL' && petScore >= 2 && petScore <= 4)
+          || (petTier == 'BASIC' && petScore <= 1)
+          || (petTier == 'UNKNOWN' && petScore == 0))
+        && search.petSortKey == petTierRank * 10000 + petScore * 100 + basicScore
+        && search.primarySourceId is string
+        && search.primarySourceId == oldData.search.primarySourceId
+        // matches() rejects non-string values while enforcing the exact hash shape.
+        && search.inputHash.matches('^[a-f0-9]{64}$')
+        // Equality with request.time also enforces the timestamp type.
+        && search.derivedAt == request.time
+        && (!('serviceCategory' in data) || !(data.serviceCategory is string) || search.category == data.serviceCategory)
+        && (!('regionArea' in data) || !(data.regionArea in ['JEJU_CITY', 'SEOGWIPO_CITY', 'EAST', 'WEST']) || search.region == data.regionArea);
+    }
+
+    function validCompleteSearch(data, oldData) {
+      let search = data.search;
+      let basicScore = search.basicScore;
+      let petScore = search.petScore;
+      let petTier = search.petTier;
+      let region = search.region;
+      let category = search.category;
+      let primarySourceId = search.primarySourceId;
+      let petTierRank = petTier == 'RICH' ? 3 : petTier == 'PARTIAL' ? 2 : petTier == 'BASIC' ? 1 : 0;
+      return [
+          search is map,
+          search.size() == 14,
+          search.version == 1,
+          search.scoreVersion == 'hank-place-field-audit-v1',
+          region in ['JEJU_CITY', 'SEOGWIPO_CITY', 'EAST', 'WEST', 'UNKNOWN'],
+          category in ['ATTRACTION', 'CAFE', 'FOOD', 'SHOPPING', 'STAY', 'LEISURE', 'CULTURE', 'EVENT', 'UNKNOWN'],
+          search.regionBasis in ['SERVICE_REGION', 'ADDRESS_EAST', 'ADDRESS_WEST', 'MUNICIPALITY', 'UNKNOWN'],
+          search.categoryBasis in ['SERVICE_CATEGORY', 'KTO_CONTENT_TYPE', 'KTO_CAT3', 'TITLE_FALLBACK', 'UNKNOWN'],
+          basicScore is int, basicScore in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
+          petScore is int, petScore in [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+          search.totalScore is int,
+          search.totalScore == basicScore + petScore,
+          (petTier == 'RICH' && petScore >= 5)
+            || (petTier == 'PARTIAL' && petScore >= 2 && petScore <= 4)
+            || (petTier == 'BASIC' && petScore <= 1)
+            || (petTier == 'UNKNOWN' && petScore == 0),
+          search.petSortKey == petTierRank * 10000 + petScore * 100 + basicScore,
+          primarySourceId is string,
+          primarySourceId == oldData.search.primarySourceId,
+          search.inputHash.matches('^[a-f0-9]{64}$'),
+          search.derivedAt == request.time,
+          category != 'UNKNOWN',
+          category == data.serviceCategory,
+          region == data.regionArea
+        ].hasOnly([true]);
+    }
+
+    function validCompleteSecondaryDisplayFields(data) {
+      let roadAddress = data.roadAddress;
+      let phone = data.phone;
+      let shortDescription = data.shortDescription;
+      let parkingInfo = data.parkingInfo;
+      let businessHours = data.businessHours;
+      let closedDays = data.closedDays;
+      let tags = data.tags;
+      let recommendedPoints = data.recommendedPoints;
+      let cautionNotes = data.cautionNotes;
+      return [
+          roadAddress.matches('(?s)^.{0,500}$'),
+          phone.matches('(?s)^.{0,30}$'),
+          shortDescription.matches('(?s)^.{0,500}$'),
+          parkingInfo.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$'),
+          businessHours.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$'),
+          closedDays.matches('(?s)^.{0,500}$'),
+          tags is list, tags.size() <= 30,
+          recommendedPoints is list, recommendedPoints.size() <= 30,
+          cautionNotes is list, cautionNotes.size() <= 30
+        ].hasOnly([true]);
+    }
+
+    function validCompletePlaceDisplay(data) {
+      let name = data.name;
+      let address = data.address;
+      let primaryImageUrl = data.primaryImageUrl;
+      let secondaryImageUrl = data.secondaryImageUrl;
+      let instagramUrl = data.instagramUrl;
+      let latitude = data.latitude;
+      let longitude = data.longitude;
+      let fullDescription = data.fullDescription;
+      return [
+          name.matches('(?s)^.{1,100}$'),
+          address.matches('(?s)^.{0,500}$'),
+          primaryImageUrl.matches('^(|http://.{1,493}|https://.{1,492})$'),
+          secondaryImageUrl.matches('^(|http://.{1,493}|https://.{1,492})$'),
+          fullDescription.matches('(?s)^.{0,1000}.{0,1000}.{0,1000}.{0,1000}$'),
+          instagramUrl.size() <= 500,
+          instagramUrl.matches('^$|^https?://([A-Za-z0-9-]+\\.)*instagram\\.com([/:?#].*)?$'),
+          latitude == null || (latitude is number && latitude >= 32.5 && latitude <= 34.2),
+          longitude == null || (longitude is number && longitude >= 125.5 && longitude <= 127.2),
+          data.coordinateQualityStatus == 'ADMIN_CONFIRMED',
+          data.petPolicy.petInformationStatus == 'ADMIN_CONFIRMED',
+          validCompleteSecondaryDisplayFields(data)
+        ].hasOnly([true])
+        && validPetPolicy(data)
+        && validAmenities(data)
+        && validCompleteAdminOverrides(data);
+    }
+
+    function validPartialPlaceDisplay(data, oldData, affected) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (affected.hasAny(['serviceCategory'])
+          ? data.serviceCategory is string && data.serviceCategory in ['ATTRACTION', 'CAFE', 'FOOD', 'SHOPPING', 'STAY', 'LEISURE', 'CULTURE', 'EVENT']
+          : !('serviceCategory' in data) || data.serviceCategory == null
+            || (data.serviceCategory is string && data.serviceCategory in ['ATTRACTION', 'CAFE', 'FOOD', 'SHOPPING', 'STAY', 'LEISURE', 'CULTURE', 'EVENT']))
+        && (affected.hasAny(['regionArea'])
+          ? data.regionArea is string && data.regionArea in ['JEJU_CITY', 'SEOGWIPO_CITY', 'EAST', 'WEST', 'UNKNOWN']
+          : !('regionArea' in data) || data.regionArea == null
+            || (data.regionArea is string && data.regionArea in ['JEJU_CITY', 'SEOGWIPO_CITY', 'EAST', 'WEST', 'UNKNOWN']))
+        && (data.address == oldData.address || (data.address is string && data.address.size() <= 500))
+        && (data.roadAddress == oldData.roadAddress || (data.roadAddress is string && data.roadAddress.size() <= 500))
+        && (data.phone == oldData.phone || (data.phone is string && data.phone.size() <= 30))
+        && (data.primaryImageUrl == oldData.primaryImageUrl || (data.primaryImageUrl is string && (
+          data.primaryImageUrl == '' || (data.primaryImageUrl.size() <= 500 && data.primaryImageUrl.matches('^https?://.+$'))
+        )))
+        && (data.secondaryImageUrl == oldData.secondaryImageUrl || (data.secondaryImageUrl is string && (
+          data.secondaryImageUrl == '' || (data.secondaryImageUrl.size() <= 500 && data.secondaryImageUrl.matches('^https?://.+$'))
+        )))
+        && (data.shortDescription == oldData.shortDescription || (data.shortDescription is string && data.shortDescription.size() <= 500))
+        && (data.fullDescription == oldData.fullDescription || (data.fullDescription is string && data.fullDescription.size() <= 4000))
+        && (data.parkingInfo == oldData.parkingInfo || (data.parkingInfo is string && data.parkingInfo.size() <= 4000))
+        && (data.businessHours == oldData.businessHours || (data.businessHours is string && data.businessHours.size() <= 4000))
+        && (data.closedDays == oldData.closedDays || (data.closedDays is string && data.closedDays.size() <= 500))
+        && (data.instagramUrl == oldData.instagramUrl || (data.instagramUrl is string && (
+          data.instagramUrl == '' || (data.instagramUrl.size() <= 500
+            && data.instagramUrl.matches('^https?://([A-Za-z0-9-]+\\.)*instagram\\.com([/:?#].*)?$'))
+        )))
+        && (data.tags == oldData.tags || (data.tags is list && data.tags.size() <= 30))
+        && (data.recommendedPoints == oldData.recommendedPoints || (data.recommendedPoints is list && data.recommendedPoints.size() <= 30))
+        && (data.cautionNotes == oldData.cautionNotes || (data.cautionNotes is list && data.cautionNotes.size() <= 30))
+        && ((data.latitude == oldData.latitude && data.longitude == oldData.longitude
+          && data.coordinateQualityStatus == oldData.coordinateQualityStatus) || (
+          (data.latitude == null || (data.latitude is number && data.latitude >= 32.5 && data.latitude <= 34.2))
+          && (data.longitude == null || (data.longitude is number && data.longitude >= 125.5 && data.longitude <= 127.2))
+          && data.coordinateQualityStatus == 'ADMIN_CONFIRMED'
+        ))
+        && (!affected.hasAny(['petPolicy']) || validPetPolicy(data))
+        && (!affected.hasAny(['amenities']) || validAmenities(data))
+        && (!affected.hasAny(['adminOverrides']) || validAdminOverrides(data));
+    }
+
+    function validPlaceUpdate(placeId) {
+      let data = request.resource.data;
+      let oldData = resource.data;
+      let affected = data.diff(oldData).affectedKeys();
+      let displayAffected = affected.difference(
+        ['manualAdmin', 'search', 'updatedAt', 'coordinateQualityStatus'].toSet()
+      );
+      return oldData.placeId == placeId
+        && data.placeId == placeId
+        // Equality with request.time also enforces the timestamp type.
+        && data.updatedAt == request.time
+        && (displayAffected.size() == 22
+          ? validCompleteManualAdmin(data, oldData, displayAffected)
+            && validCompletePlaceDisplay(data)
+            && validCompleteSearch(data, oldData)
+          : affected.hasAll(['manualAdmin', 'search', 'updatedAt'])
+            && validPartialManualAdmin(data, oldData, displayAffected)
+            && (!affected.hasAny(['coordinateQualityStatus'])
+              || affected.hasAny(['latitude', 'longitude']))
+            && (!affected.hasAny(['petPolicy', 'adminOverrides'])
+              || validPetProvenance(data, oldData, affected))
+            && validPartialPlaceDisplay(data, oldData, affected)
+            && validSearch(data, oldData));
+    }
+
+    match /admins/{uid} {
+      allow get: if isOwner(uid);
+      allow list, create, update, delete: if false;
+    }
+
+    match /users/{uid}/favorites/{placeId} {
+      allow read, delete: if isOwner(uid);
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasAll(['placeId', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['placeId', 'createdAt'])
+        && request.resource.data.placeId is string
+        && request.resource.data.placeId == placeId
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt == request.time;
+    }
+
+    match /places/{placeId} {
+      allow read: if true;
+      allow create, delete: if false;
+      allow update: if isActiveAdmin()
+        && validPlaceUpdate(placeId);
+
+      match /sources/{sourceId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // Rules can validate search shape/arithmetic and a SHA-256-shaped value, but
+    // cannot recompute SHA-256 from document inputs. Parity is enforced in tests.
+    match /{path=**}/sources/{sourceId} {
+      allow read: if resource.data.source == 'KTO'
+        && resource.data.placeId.matches('^kto-[0-9]+$');
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

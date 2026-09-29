@@ -24,7 +24,59 @@ export interface EventBanner {
   linkText?: string;
 }
 
-export type PlaceCategory = 'all' | 'cafe' | 'spot' | 'food' | 'trail' | 'stay';
+/** UI/search place kind. `all` = home / unset (not a Firestore category). */
+export type PlaceCategory =
+  | 'all'
+  | 'attraction'
+  | 'cafe'
+  | 'food'
+  | 'shopping'
+  | 'stay'
+  | 'leisure'
+  | 'culture'
+  | 'event'
+  /** @deprecated legacy UI values kept for stored fixtures only */
+  | 'spot'
+  | 'trail';
+
+export type DogSizeLimit = 'all' | 'small' | 'medium' | 'large'; // all sizes, under 10kg, 10-20kg, large allowed
+
+export type SpacePolicy = 'all' | 'indoor' | 'indoor_carrier' | 'outdoor_only';
+
+export type TriState = 'TRUE' | 'FALSE' | 'UNKNOWN';
+export type PetInformationStatus = 'KTO_OVERLAY_FOUND' | 'ADMIN_CONFIRMED' | 'UNKNOWN';
+
+export interface PetPolicy {
+  petInformationStatus: PetInformationStatus;
+  petAcceptance: TriState;
+  smallDogAllowed: TriState;
+  mediumDogAllowed: TriState;
+  largeDogAllowed: TriState;
+  indoorAllowed: TriState;
+  outdoorAllowed: TriState;
+  carrierRequired: TriState;
+  leashRequired: TriState;
+  offLeashZoneAvailable: TriState;
+  allowedBreeds: string[];
+  allowedSizes: string[];
+  sizeDescription: string;
+  spacePolicy: string;
+  spaceDescription: string;
+  leashDescription: string;
+  petFee: number | null;
+  petFeeDescription: string;
+  otherPetPolicy: string;
+}
+
+export interface PlaceAmenities {
+  freeParking: TriState;
+  parkingDescription: string;
+  dogMenu: TriState; // 멍푸치노, 수제간식
+  waterBowlProvided: TriState; // 물그릇 제공
+  wasteBagsProvided: TriState; // 배변봉투 비치
+  fencedYard: TriState; // 펜스 운동장
+  photoZone: TriState; // 반려견 포토존
+}
 
 export interface Place {
   id: string;              // contentId
@@ -37,19 +89,24 @@ export interface Place {
   image?: string;          // 원본 대형 이미지
   thumbnail?: string;      // 원본 썸네일 이미지
   coordinates: {
-    lat: number;           // 위도 (latitude)
-    lng: number;           // 경도 (longitude)
-  };
-  latitude: number;
-  longitude: number;
-  contentTypeId: string;   // 12: 관광지, 14: 문화시설, 28: 레포츠, 32: 숙박, 39: 음식점
-  cat1?: string;
-  cat2?: string;
-  cat3?: string;
-  sigunguCode?: string;
-  region: RegionId;        // 자동 매핑된 지역 (east, west, jeju_city, seogwipo)
-  regionName: string;      // 지역 표시명 (동부, 서부, 제주시, 서귀포시)
-  category: PlaceCategory; // 유형 (spot, trail, stay, cafe, food)
+    lat: number;
+    lng: number;
+  } | null;
+  petPolicy: PetPolicy;
+  amenities: PlaceAmenities;
+  cautionNotes: string[];
+  recommendedPoints: string[];
+  imageUrl: string;
+  tags: string[];
+  petInformationStatus?: PetInformationStatus;
+  petInformationLabel?: string;
+  petInformationNotice?: string;
+  petDetails?: { key: string; label: string; value: string; source: 'ADMIN' | 'KTO' }[];
+  imageFallbackUrls?: string[];
+  petTier?: 'RICH' | 'PARTIAL' | 'BASIC' | 'UNKNOWN';
+  totalScore?: number;
+  petScore?: number;
+}
 
   // 공공데이터 TourAPI 4.0 반려동물 전용 정보 (detailPetTour2)
   petType?: string;          // 동반 가능 구역 (예: 전구역 동반가능, 일부구역 동반가능)

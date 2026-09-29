@@ -8,3 +8,13 @@ coverage/
 .env.local
 .env.*
 !.env.example
+
+.firebase/
+
+
+tools/firestore_place_pilot_import/.venv/
+
+
+__pycache__/
+*.py[cod]
+

@@ -1,5 +1,6 @@
+import PlaceImage from './PlaceImage';
+import React from 'react';
 import { Place } from '../types';
-import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { MapPin, Heart, ChevronRight } from 'lucide-react';
 
 interface PlaceListItemProps {
@@ -13,11 +14,16 @@ interface PlaceListItemProps {
 }
 
 const CATEGORY_STYLES: Record<string, { label: string; badgeClass: string }> = {
+  cafe: { label: '카페', badgeClass: 'bg-orange-100 text-orange-800' },
+  attraction: { label: '관광', badgeClass: 'bg-purple-100 text-purple-800' },
+  food: { label: '식당', badgeClass: 'bg-rose-100 text-rose-800' },
+  shopping: { label: '쇼핑', badgeClass: 'bg-fuchsia-100 text-fuchsia-800' },
+  stay: { label: '숙소', badgeClass: 'bg-blue-100 text-blue-800' },
+  leisure: { label: '레포츠', badgeClass: 'bg-cyan-100 text-cyan-800' },
+  culture: { label: '문화', badgeClass: 'bg-indigo-100 text-indigo-800' },
+  event: { label: '축제', badgeClass: 'bg-pink-100 text-pink-800' },
   spot: { label: '관광', badgeClass: 'bg-purple-100 text-purple-800' },
   trail: { label: '산책', badgeClass: 'bg-emerald-100 text-emerald-800' },
-  stay: { label: '숙소', badgeClass: 'bg-blue-100 text-blue-800' },
-  cafe: { label: '카페', badgeClass: 'bg-orange-100 text-orange-800' },
-  food: { label: '식당', badgeClass: 'bg-rose-100 text-rose-800' },
 };
 
 export default function PlaceListItem({
@@ -50,18 +56,12 @@ export default function PlaceListItem({
     >
       {/* 1. Slim Square Thumbnail */}
       <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden bg-slate-100 shrink-0 border border-slate-200/60">
-        <img
-          src={place.imageUrl || NEUTRAL_IMAGE_PLACEHOLDER}
+        <PlaceImage
+          place={place}
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
           referrerPolicy="no-referrer"
           loading="lazy"
-          onError={(e) => {
-            const target = e.currentTarget;
-            if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
-              target.src = NEUTRAL_IMAGE_PLACEHOLDER;
-            }
-          }}
         />
         <span
           className={`absolute bottom-0 inset-x-0 text-center py-0.2 text-[9px] font-black backdrop-blur-xs ${cat.badgeClass}`}
@@ -84,26 +84,16 @@ export default function PlaceListItem({
         </div>
 
         <p className="text-[11px] text-slate-500 line-clamp-1 font-medium mt-0.5">
-          {place.address}
+          {place.shortDesc}
+          <span className="md:hidden"> · {place.petInformationLabel}</span>
         </p>
       </div>
 
-      {/* 3. Real Pet Policy Badges */}
-      <div className="hidden md:flex items-center gap-1.5 shrink-0">
-        {place.petType && (
-          <span className="px-2 py-0.5 rounded text-[11px] font-extrabold bg-amber-50 text-amber-800 border border-amber-200/60">
-            🐾 {place.petType}
-          </span>
-        )}
-
-        {place.petAllowed && (
-          <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60 max-w-[140px] truncate">
-            {place.petAllowed}
-          </span>
-        )}
+      <div className="hidden md:flex items-center shrink-0">
+        <span className={`rounded border px-2 py-0.5 text-[11px] font-semibold ${place.petInformationStatus === 'KTO_OVERLAY_FOUND' || place.petInformationStatus === 'ADMIN_CONFIRMED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-600'}`}>{place.petInformationLabel}</span>
       </div>
 
-      {/* 4. Action Buttons */}
+      {/* 5. Quick Actions: Bookmark & Chevron */}
       <div className="flex items-center gap-1 shrink-0">
         <button
           onClick={(e) => {

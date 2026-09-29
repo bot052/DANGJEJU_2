@@ -1,3 +1,4 @@
+import PlaceImage from './PlaceImage';
 import React from 'react';
 import { Place } from '../types';
 import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
@@ -14,11 +15,16 @@ interface PlaceCardProps {
 }
 
 const CATEGORY_STYLES: Record<string, { label: string; badgeClass: string; icon: string }> = {
-  spot: { label: '관광지', badgeClass: 'bg-purple-600 text-white', icon: '🎡' },
-  trail: { label: '산책로', badgeClass: 'bg-emerald-600 text-white', icon: '🌿' },
-  stay: { label: '숙소', badgeClass: 'bg-blue-600 text-white', icon: '🏡' },
   cafe: { label: '카페', badgeClass: 'bg-orange-500 text-white', icon: '☕' },
+  attraction: { label: '관광지', badgeClass: 'bg-purple-500 text-white', icon: '🎡' },
   food: { label: '음식점', badgeClass: 'bg-rose-500 text-white', icon: '🍽️' },
+  shopping: { label: '쇼핑', badgeClass: 'bg-fuchsia-500 text-white', icon: '🛍️' },
+  stay: { label: '숙소', badgeClass: 'bg-blue-600 text-white', icon: '🏡' },
+  leisure: { label: '레포츠', badgeClass: 'bg-cyan-600 text-white', icon: '🏄' },
+  culture: { label: '문화시설', badgeClass: 'bg-indigo-500 text-white', icon: '🏛️' },
+  event: { label: '축제·공연', badgeClass: 'bg-pink-500 text-white', icon: '🎉' },
+  spot: { label: '관광지', badgeClass: 'bg-purple-500 text-white', icon: '🎡' },
+  trail: { label: '산책로', badgeClass: 'bg-emerald-600 text-white', icon: '🌿' },
 };
 
 export default function PlaceCard({
@@ -58,8 +64,8 @@ export default function PlaceCard({
     >
       {/* 1. Left Thumbnail Section */}
       <div className="relative w-28 sm:w-32 h-[126px] sm:h-[132px] shrink-0 flex-shrink-0 self-center rounded-xl overflow-hidden bg-slate-100">
-        <img
-          src={place.imageUrl || NEUTRAL_IMAGE_PLACEHOLDER}
+        <PlaceImage
+          place={place}
           alt={place.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           referrerPolicy="no-referrer"
@@ -102,6 +108,11 @@ export default function PlaceCard({
         <div className="absolute bottom-2 left-2 right-2 flex items-center gap-1 text-white text-[10px] font-bold drop-shadow-md">
           <MapPin className="w-3 h-3 text-amber-300 shrink-0" />
           <span className="truncate">{place.regionName}</span>
+          {place.petPolicy.offLeashZoneAvailable === 'TRUE' && (
+            <span className="ml-auto px-1.5 py-0.2 rounded bg-teal-500 text-white text-[9px] font-black">
+              오프리쉬
+            </span>
+          )}
         </div>
       </div>
 
@@ -119,28 +130,10 @@ export default function PlaceCard({
             <span className="truncate">{place.address}</span>
           </p>
 
-          {/* 실제 공공데이터 반려동물 핵심 정보 배지 (값이 있는 항목만 표시) */}
-          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-            {/* 동반 가능 구역 (petType) */}
-            {place.petType && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-extrabold bg-amber-50 text-amber-800 border border-amber-200/70 text-[10px] sm:text-[11px] shrink-0 whitespace-nowrap">
-                🐾 {place.petType}
-              </span>
-            )}
-
-            {/* 동반 가능 견종/범위 (petAllowed) */}
-            {place.petAllowed && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/70 text-[10px] sm:text-[11px] shrink-0 whitespace-nowrap">
-                🐕 {place.petAllowed}
-              </span>
-            )}
-
-            {/* 필수사항 (petNeed) */}
-            {place.petNeed && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium bg-slate-100 text-slate-700 border border-slate-200/70 text-[10px] sm:text-[11px] shrink-0 whitespace-nowrap">
-                ⚠️ {place.petNeed}
-              </span>
-            )}
+          <div className="mt-2 flex flex-wrap gap-1">
+            <span className={`rounded-md border px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${place.petInformationStatus === 'KTO_OVERLAY_FOUND' || place.petInformationStatus === 'ADMIN_CONFIRMED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
+              {place.petInformationLabel}
+            </span>
           </div>
         </div>
 
