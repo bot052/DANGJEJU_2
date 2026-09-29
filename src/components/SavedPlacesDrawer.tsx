@@ -1,6 +1,5 @@
 import PlaceImage from './PlaceImage';
 import { Place } from '../types';
-import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { X, Heart, MapPin, Trash2, ChevronRight } from 'lucide-react';
 
 interface SavedPlacesDrawerProps {
@@ -86,12 +85,6 @@ export default function SavedPlacesDrawer({
                   alt={place.name}
                   className="w-16 h-16 rounded-lg object-cover shrink-0"
                   referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
-                      target.src = NEUTRAL_IMAGE_PLACEHOLDER;
-                    }
-                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1 text-[11px] text-slate-500">
