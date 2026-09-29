@@ -7,7 +7,12 @@ import {
   Heart, 
   Share2, 
   Check, 
-  Dog, 
+  Dog,
+  Car,
+  Clock,
+  Phone,
+  Sparkles,
+  ShieldAlert, 
   AlertTriangle,
   ShoppingBag,
   Gift,
@@ -65,7 +70,7 @@ export default function PlaceDetailModal({
   // Each open / place switch starts on the first tab ("반려동물 정보").
   useEffect(() => {
     if (isOpen && place) {
-      setActiveTab('policy');
+      setActiveTab('pet');
     }
   }, [isOpen, place?.id]);
 
@@ -313,72 +318,6 @@ export default function PlaceDetailModal({
                   네이버 지도로 보기
                 </a>
               </div>
-            </div>
-          )}
-
-          {activeTab === 'tips' && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-                <p>{place.fullDesc}</p>
-                <p className="mt-2 text-xs text-slate-500">편의시설은 아래 제공된 정보와 시설 문의를 통해 확인해 주세요.</p>
-                {!place.petDetails?.length && <p className="mt-2">{place.petInformationNotice}</p>}
-              </div>
-
-              {amenityFacts.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {amenityFacts.map((fact) => (
-                    <div key={String(fact.key)} className="rounded-xl border border-slate-200 bg-white p-3 text-xs">
-                      <span className="font-bold text-slate-700">{fact.label}</span>
-                      <span className="block mt-1 text-slate-500">{TRI_LABEL[fact.value]}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {place.amenities.parkingDescription && <p className="text-xs text-slate-600">주차 편의: {place.amenities.parkingDescription}</p>}
-              {place.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">{place.tags.map((tag) => <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">#{tag}</span>)}</div>
-              )}
-              {place.instagram && (
-                <a href={place.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-pink-600 hover:underline">
-                  <ExternalLink className="w-3.5 h-3.5" /> Instagram
-                </a>
-              )}
-
-              {/* Recommended Points */}
-              {place.recommendedPoints && place.recommendedPoints.length > 0 && (
-                <div className="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/60">
-                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-600" />
-                    추천 포인트
-                  </h4>
-                  <ul className="space-y-1.5 text-xs text-slate-700">
-                    {place.recommendedPoints.map((pt, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-amber-500 font-bold">•</span>
-                        <span>{pt}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Caution Notes */}
-              {place.cautionNotes && place.cautionNotes.length > 0 && (
-                <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/60">
-                  <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <ShieldAlert className="w-4 h-4 text-rose-600" />
-                    이용 시 주의사항
-                  </h4>
-                  <ul className="space-y-1.5 text-xs text-rose-950">
-                    {place.cautionNotes.map((note, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <span className="text-rose-500 font-bold">•</span>
-                        <span>{note}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
           )}
         </div>
