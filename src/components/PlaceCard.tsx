@@ -1,7 +1,6 @@
 import PlaceImage from './PlaceImage';
 import React from 'react';
 import { Place } from '../types';
-import { NEUTRAL_IMAGE_PLACEHOLDER } from '../data/places';
 import { MapPin, Heart, ChevronRight } from 'lucide-react';
 
 interface PlaceCardProps {
@@ -70,12 +69,6 @@ export default function PlaceCard({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           referrerPolicy="no-referrer"
           loading="lazy"
-          onError={(e) => {
-            const target = e.currentTarget;
-            if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
-              target.src = NEUTRAL_IMAGE_PLACEHOLDER;
-            }
-          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
 
