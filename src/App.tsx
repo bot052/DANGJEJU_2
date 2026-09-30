@@ -64,6 +64,16 @@ export default function App() {
   const retryPlaces = isHome ? hero.retry : search.retry;
   const docCache = isHome ? hero.cache : search.cache;
 
+  // Keep the intro mark for first entry, but only show it again when data loading is noticeably slow.
+  useEffect(() => {
+    if (placesStatus !== 'loading' || isLoading) {
+      setShowSlowLoading(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowSlowLoading(true), 1200);
+    return () => window.clearTimeout(timer);
+  }, [placesStatus, isLoading]);
+
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalPlace, setModalPlace] = useState<Place | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -188,11 +198,10 @@ export default function App() {
       {/* 1. 개 아이콘 로딩 화면 */}
       {(isLoading || showSlowLoading) && (
         <LoadingScreen
-          onLoaded={() => {
-            setIsLoading(false);
-            setShowSlowLoading(false);
-          }}
-          minDuration={isLoading ? 900 : 450}
+          key={isLoading ? 'intro-loading' : 'slow-loading'}
+          onLoaded={isLoading ? () => setIsLoading(false) : undefined}
+          minDuration={isLoading ? 900 : 650}
+          persistent={!isLoading && placesStatus === 'loading'}
         />
       )}
 
