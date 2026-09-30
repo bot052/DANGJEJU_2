@@ -44,6 +44,7 @@ export default function App() {
   const navigation = useHashRoute();
   const isAdminRoute = navigation.route === 'admin-places';
   const [isLoading, setIsLoading] = useState(true);
+  const [showSlowLoading, setShowSlowLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionId>('all');
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('all');
   const isHome = selectedRegion === 'all' || selectedCategory === 'all';
@@ -76,6 +77,16 @@ export default function App() {
   // Home and search share the same array for map + list (no client filter of a full catalog).
   const filteredPlaces = places;
   const savedPlacesList = favorites.places;
+
+  // Keep the intro mark for first entry; reuse it only when a data load is noticeably slow.
+  useEffect(() => {
+    if (placesStatus !== 'loading') {
+      setShowSlowLoading(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowSlowLoading(true), 900);
+    return () => window.clearTimeout(timer);
+  }, [placesStatus]);
 
   const handleOpenDetail = async (place: Place) => {
     setSelectedPlace(place);
@@ -175,15 +186,20 @@ export default function App() {
     <div className="min-h-screen bg-[#fbf9f5] text-slate-800 flex flex-col font-sans antialiased selection:bg-amber-100 selection:text-amber-900">
       
       {/* 1. 개 아이콘 로딩 화면 */}
-      {isLoading && (
-        <LoadingScreen onLoaded={() => setIsLoading(false)} minDuration={1200} />
+      {(isLoading || showSlowLoading) && (
+        <LoadingScreen
+          onLoaded={() => {
+            setIsLoading(false);
+            setShowSlowLoading(false);
+          }}
+          minDuration={isLoading ? 900 : 450}
+        />
       )}
 
       {/* Header */}
       <Header
         savedCount={savedPlaceIds.length}
         onOpenSaved={() => setIsSavedDrawerOpen(true)}
-        onReloadLoading={() => setIsLoading(true)}
         onResetHome={handleResetHome}
         user={user}
         authLoading={authLoading}
@@ -475,7 +491,9 @@ export default function App() {
                         place={place}
                         isSelected={selectedPlace?.id === place.id}
                         isSaved={savedPlaceIds.includes(place.id)}
-                        onSelect={(p) => setSelectedPlace(p)}
+                        onSelect={(p) => {
+                          void handleOpenDetail(p);
+                        }}
                         onToggleSave={toggleSavePlace}
                         onOpenDetail={handleOpenDetail}
                       />

@@ -42,6 +42,7 @@ export default function PlaceCard({
 
   const handleCardClick = () => {
     onSelect(place);
+    onOpenDetail(place);
   };
 
   const handleDetailClick = (e: React.MouseEvent) => {
