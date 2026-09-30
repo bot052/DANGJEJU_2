@@ -44,6 +44,7 @@ export default function App() {
   const navigation = useHashRoute();
   const isAdminRoute = navigation.route === 'admin-places';
   const [isLoading, setIsLoading] = useState(true);
+  const [showSlowLoading, setShowSlowLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionId>('all');
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('all');
   const isHome = selectedRegion === 'all' || selectedCategory === 'all';
@@ -62,6 +63,16 @@ export default function App() {
   const placesStatus = isHome ? hero.status : (searchReady ? search.status : 'idle');
   const retryPlaces = isHome ? hero.retry : search.retry;
   const docCache = isHome ? hero.cache : search.cache;
+
+  // Keep the intro mark for first entry, but only show it again when data loading is noticeably slow.
+  useEffect(() => {
+    if (placesStatus !== 'loading' || isLoading) {
+      setShowSlowLoading(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowSlowLoading(true), 1200);
+    return () => window.clearTimeout(timer);
+  }, [placesStatus, isLoading]);
 
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [modalPlace, setModalPlace] = useState<Place | null>(null);
@@ -175,15 +186,19 @@ export default function App() {
     <div className="min-h-screen bg-[#fbf9f5] text-slate-800 flex flex-col font-sans antialiased selection:bg-amber-100 selection:text-amber-900">
       
       {/* 1. 개 아이콘 로딩 화면 */}
-      {isLoading && (
-        <LoadingScreen onLoaded={() => setIsLoading(false)} minDuration={1200} />
+      {(isLoading || showSlowLoading) && (
+        <LoadingScreen
+          key={isLoading ? 'intro-loading' : 'slow-loading'}
+          onLoaded={isLoading ? () => setIsLoading(false) : undefined}
+          minDuration={isLoading ? 900 : 650}
+          persistent={!isLoading && placesStatus === 'loading'}
+        />
       )}
 
       {/* Header */}
       <Header
         savedCount={savedPlaceIds.length}
         onOpenSaved={() => setIsSavedDrawerOpen(true)}
-        onReloadLoading={() => setIsLoading(true)}
         onResetHome={handleResetHome}
         user={user}
         authLoading={authLoading}
@@ -475,7 +490,7 @@ export default function App() {
                         place={place}
                         isSelected={selectedPlace?.id === place.id}
                         isSaved={savedPlaceIds.includes(place.id)}
-                        onSelect={(p) => setSelectedPlace(p)}
+                        onSelect={handleOpenDetail}
                         onToggleSave={toggleSavePlace}
                         onOpenDetail={handleOpenDetail}
                       />
