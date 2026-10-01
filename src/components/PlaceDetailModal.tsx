@@ -202,6 +202,54 @@ export default function PlaceDetailModal({
                 <h4 className="text-sm font-bold text-slate-800">{place.petInformationLabel}</h4>
                 <p className="mt-2 text-sm leading-relaxed text-slate-700">{place.petInformationNotice}</p>
               </div>
+
+              {/* 방문 결정에 필요한 핵심 반려동물 정보를 먼저 표시 */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="text-[11px] font-bold text-slate-500">동반 가능 여부</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel('petAcceptance', place.petPolicy.petAcceptance)}</div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="text-[11px] font-bold text-slate-500">크기 제한</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">
+                    {place.petPolicy.sizeDescription || (place.petPolicy.allowedSizes.length > 0 ? place.petPolicy.allowedSizes.join(', ') : '미확인')}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="text-[11px] font-bold text-slate-500">목줄 여부</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">
+                    {place.petPolicy.leashDescription || policyValueLabel('leashRequired', place.petPolicy.leashRequired)}
+                  </div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="text-[11px] font-bold text-slate-500">실내</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel('indoorAllowed', place.petPolicy.indoorAllowed)}</div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="text-[11px] font-bold text-slate-500">실외</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel('outdoorAllowed', place.petPolicy.outdoorAllowed)}</div>
+                </div>
+              </div>
+
+              {(place.cautionNotes.length > 0 || place.petRisk || place.petInfo) && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
+                  <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-rose-600" />
+                    방문 시 주의사항
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-rose-950">
+                    {place.cautionNotes.map((note, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-rose-500 font-bold">•</span>
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                    {place.petRisk && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petRisk}</span></li>}
+                    {place.petInfo && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petInfo}</span></li>}
+                  </ul>
+                </div>
+              )}
+
               {Boolean(place.petDetails?.length) && (
                 <dl className="space-y-3">
                   {place.petDetails!.map((detail) => (
@@ -215,13 +263,16 @@ export default function PlaceDetailModal({
                   ))}
                 </dl>
               )}
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {policyFacts.map((fact) => (
-                  <div key={String(fact.key)} className="rounded-xl border border-slate-200 bg-white p-3">
-                    <div className="text-[11px] font-bold text-slate-500">{fact.label}</div>
-                    <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel(fact.key, fact.value)}</div>
-                  </div>
-                ))}
+                {policyFacts
+                  .filter((fact) => !['petAcceptance', 'indoorAllowed', 'outdoorAllowed', 'leashRequired'].includes(String(fact.key)))
+                  .map((fact) => (
+                    <div key={String(fact.key)} className="rounded-xl border border-slate-200 bg-white p-3">
+                      <div className="text-[11px] font-bold text-slate-500">{fact.label}</div>
+                      <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel(fact.key, fact.value)}</div>
+                    </div>
+                  ))}
               </div>
               {(place.petPolicy.allowedBreeds.length > 0 || place.petPolicy.allowedSizes.length > 0 || place.petPolicy.sizeDescription || (place.petPolicy.spacePolicy && place.petPolicy.spacePolicy !== 'unknown') || place.petPolicy.spaceDescription || place.petPolicy.leashDescription || place.petPolicy.petFee !== null || place.petPolicy.petFeeDescription || place.petPolicy.otherPetPolicy) && (
                 <dl className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-2">

@@ -342,15 +342,17 @@ export default function App() {
                     <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                     <span className="truncate">{cat.name}</span>
                   </div>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-black shrink-0 ${
-                      isActive
-                        ? 'bg-amber-300 text-slate-950'
-                        : 'bg-slate-200/70 text-slate-500'
-                    }`}
-                  >
-                    {count}
-                  </span>
+                  {!isHome && selectedCategory === 'all' && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-black shrink-0 ${
+                        isActive
+                          ? 'bg-amber-300 text-slate-950'
+                          : 'bg-slate-200/70 text-slate-500'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  )}
                 </button>
               );
             })}
