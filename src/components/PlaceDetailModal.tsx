@@ -112,8 +112,9 @@ export default function PlaceDetailModal({
   const sizeSummary = place.petAllowed || place.petPolicy.sizeDescription
     || (place.petPolicy.allowedSizes.length > 0 ? place.petPolicy.allowedSizes.join(', ') : '')
     || detailValue('동반가능동물', '동반 가능 동물', '크기', '견종') || '미확인';
-  const leashSummary = place.petNeed || place.petPolicy.leashDescription
-    || detailValue('필수사항', '필수 사항', '목줄', '리드줄', '입마개', '이동장')
+  const requiredPetDetail = petDetailEntries.find((detail) => detail.key === 'acmpyNeedMtr')?.value || '';
+  const leashSummary = requiredPetDetail || place.petNeed || place.petPolicy.leashDescription
+    || detailValue('필수사항', '필수 사항', '필요 사항', '목줄', '리드줄', '매너벨트', '입마개', '이동장')
     || (place.petPolicy.leashRequired !== 'UNKNOWN' ? policyValueLabel('leashRequired', place.petPolicy.leashRequired) : '미확인');
   const indoorSummary = place.petIndoorInfo || detailValue('실내')
     || (place.petPolicy.indoorAllowed !== 'UNKNOWN' ? policyValueLabel('indoorAllowed', place.petPolicy.indoorAllowed) : '미확인');
@@ -316,14 +317,20 @@ export default function PlaceDetailModal({
                 </div>
               )}
 
-              {((place.cautionNotes.filter((note) => !/^필수사항\s*:/.test(note)).length > 0) || place.petRisk || place.petInfo) && (
+              {((place.cautionNotes.filter((note) =>
+                !/^(?:필수사항|동반 시 필요 사항)\s*:/.test(note)
+                && (!requiredPetDetail || !note.includes(requiredPetDetail))
+              ).length > 0) || place.petRisk || place.petInfo) && (
                 <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
                   <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-rose-600" />
                     방문 시 주의사항
                   </h4>
                   <ul className="space-y-1.5 text-xs text-rose-950">
-                    {place.cautionNotes.filter((note) => !/^필수사항\s*:/.test(note)).map((note, index) => (
+                    {place.cautionNotes.filter((note) =>
+                !/^(?:필수사항|동반 시 필요 사항)\s*:/.test(note)
+                && (!requiredPetDetail || !note.includes(requiredPetDetail))
+              ).map((note, index) => (
                       <li key={index} className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{note}</span></li>
                     ))}
                     {place.petRisk && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petRisk}</span></li>}
