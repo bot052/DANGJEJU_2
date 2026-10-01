@@ -272,40 +272,6 @@ export default function PlaceDetailModal({
                 </div>
               </div>
 
-              {remainingPetDetails.length > 0 && (
-                <dl className="space-y-3">
-                  {remainingPetDetails.map((detail) => (
-                    <div key={detail.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
-                      <dt className="text-xs font-bold text-slate-500">{detail.label}</dt>
-                      <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-800">{detail.value}</dd>
-                      <span className="mt-1 inline-block text-[10px] font-bold text-slate-400">
-                        {detail.source === 'ADMIN' ? '관리자 확인 정보' : 'KTO 제공 정보'}
-                      </span>
-                    </div>
-                  ))}
-                </dl>
-              )}
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {policyFacts
-                  .filter((fact) => !['petAcceptance', 'smallDogAllowed', 'mediumDogAllowed', 'largeDogAllowed', 'indoorAllowed', 'outdoorAllowed', 'leashRequired'].includes(String(fact.key)))
-                  .map((fact) => (
-                    <div key={String(fact.key)} className="rounded-xl border border-slate-200 bg-white p-3">
-                      <div className="text-[11px] font-bold text-slate-500">{fact.label}</div>
-                      <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel(fact.key, fact.value)}</div>
-                    </div>
-                  ))}
-              </div>
-              {(place.petPolicy.allowedBreeds.length > 0 || (place.petPolicy.spacePolicy && place.petPolicy.spacePolicy !== 'unknown') || place.petPolicy.spaceDescription || place.petPolicy.petFee !== null || place.petPolicy.petFeeDescription || place.petPolicy.otherPetPolicy) && (
-                <dl className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
-                  {place.petPolicy.allowedBreeds.length > 0 && <div><dt className="font-bold">허용 견종</dt><dd>{place.petPolicy.allowedBreeds.join(', ')}</dd></div>}
-                  {place.petPolicy.spacePolicy && place.petPolicy.spacePolicy !== 'unknown' && <div><dt className="font-bold">공간 정책</dt><dd>{place.petPolicy.spacePolicy}</dd></div>}
-                  {place.petPolicy.spaceDescription && <div><dt className="font-bold">공간 조건</dt><dd>{place.petPolicy.spaceDescription}</dd></div>}
-                  {place.petPolicy.petFee !== null && <div><dt className="font-bold">반려동물 요금</dt><dd>{place.petPolicy.petFee.toLocaleString()}원 {place.petPolicy.petFeeDescription}</dd></div>}
-                  {place.petPolicy.petFee === null && place.petPolicy.petFeeDescription && <div><dt className="font-bold">반려동물 요금 안내</dt><dd>{place.petPolicy.petFeeDescription}</dd></div>}
-                  {place.petPolicy.otherPetPolicy && <div><dt className="font-bold">기타 정책</dt><dd>{place.petPolicy.otherPetPolicy}</dd></div>}
-                </dl>
-              )}
             </div>
           )}
 
