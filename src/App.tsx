@@ -47,8 +47,8 @@ export default function App() {
   const [showSlowLoading, setShowSlowLoading] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState<RegionId>('all');
   const [selectedCategory, setSelectedCategory] = useState<PlaceCategory>('all');
-  const isHome = selectedRegion === 'all' || selectedCategory === 'all';
-  const searchReady = selectedRegion !== 'all' && selectedCategory !== 'all';
+  const isHome = selectedRegion === 'all';
+  const searchReady = selectedRegion !== 'all';
 
   const {
     user, authLoading, authBusy, notice, dismissNotice, login, logout,
@@ -144,11 +144,7 @@ export default function App() {
   }, [isAdminRoute, authLoading, adminAccess.status, adminAccess.active, user]);
 
   const handleToggleMobileMap = () => {
-    if (isNearMap) {
-      cardSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      mapSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
+    setViewMode((current) => current === 'map' ? 'list' : 'map');
   };
 
   if (isAdminRoute) {
@@ -256,7 +252,7 @@ export default function App() {
         )}
         {searchReady && placesStatus === 'idle' && (
           <div className="rounded-2xl border border-amber-100 bg-white p-6 text-sm font-bold text-slate-600">
-            지역과 장소 유형을 모두 선택하면 검색됩니다.
+            지역을 선택하면 전체 장소가 표시되며, 장소 유형으로 추가 필터링할 수 있습니다.
           </div>
         )}
         {(placesStatus === 'ready' || (isHome && placesStatus === 'idle')) && <>
@@ -560,14 +556,14 @@ export default function App() {
       </main>
 
       {/* 모바일 전용 플로팅 지도/목록 스위처 버튼 */}
-      {placesStatus === 'ready' && viewMode === 'split' && (
+      {placesStatus === 'ready' && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 lg:hidden pointer-events-none">
           <button
             onClick={handleToggleMobileMap}
             className="pointer-events-auto flex items-center gap-2 px-5 py-3 rounded-full bg-slate-900 text-white font-black text-xs shadow-2xl shadow-slate-900/40 border border-slate-700/60 hover:scale-105 active:scale-95 transition-all"
           >
             <MapPin className="w-4 h-4 text-amber-400" />
-            <span>{isNearMap ? '📋 카드 목록 위로' : `🗺️ 지도 위치 보기 (${filteredPlaces.length})`}</span>
+            <span>{viewMode === 'map' ? '📋 목록 보기' : `🗺️ 지도 보기 (${filteredPlaces.length})`}</span>
           </button>
         </div>
       )}
