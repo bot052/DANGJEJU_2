@@ -65,9 +65,9 @@ export default function PlaceDetailModal({
   onToggleSave,
 }: PlaceDetailModalProps) {
   const [copied, setCopied] = useState(false);
-  const [activeTab, setActiveTab] = useState<'pet' | 'location'>('pet');
+  const [activeTab, setActiveTab] = useState<'pet' | 'location' | 'tips'>('pet');
 
-  // Each open / place switch starts on the first tab ("반려동물 정보").
+  // Each open / place switch starts on the first tab ("반려견 동반 조건").
   useEffect(() => {
     if (isOpen && place) {
       setActiveTab('pet');
@@ -179,7 +179,7 @@ export default function PlaceDetailModal({
             }`}
           >
             <Dog className="w-4 h-4" />
-            반려동물 정보
+            반려견 동반 조건
           </button>
           <button
             onClick={() => setActiveTab('location')}
@@ -190,7 +190,18 @@ export default function PlaceDetailModal({
             }`}
           >
             <MapPin className="w-4 h-4" />
-            위치 & 길찾기
+            위치 & 주차 안내
+          </button>
+          <button
+            onClick={() => setActiveTab('tips')}
+            className={`pb-3 px-3 text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+              activeTab === 'tips'
+                ? 'border-amber-500 text-amber-600'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Sparkles className="w-4 h-4" />
+            편의 & 주의사항
           </button>
         </div>
 
@@ -231,25 +242,6 @@ export default function PlaceDetailModal({
                 </div>
               </div>
 
-              {(place.cautionNotes.length > 0 || place.petRisk || place.petInfo) && (
-                <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
-                  <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <ShieldAlert className="w-4 h-4 text-rose-600" />
-                    방문 시 주의사항
-                  </h4>
-                  <ul className="space-y-1.5 text-xs text-rose-950">
-                    {place.cautionNotes.map((note, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <span className="text-rose-500 font-bold">•</span>
-                        <span>{note}</span>
-                      </li>
-                    ))}
-                    {place.petRisk && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petRisk}</span></li>}
-                    {place.petInfo && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petInfo}</span></li>}
-                  </ul>
-                </div>
-              )}
-
               {Boolean(place.petDetails?.length) && (
                 <dl className="space-y-3">
                   {place.petDetails!.map((detail) => (
@@ -286,6 +278,65 @@ export default function PlaceDetailModal({
                   {place.petPolicy.petFee === null && place.petPolicy.petFeeDescription && <div><dt className="font-bold">반려동물 요금 안내</dt><dd>{place.petPolicy.petFeeDescription}</dd></div>}
                   {place.petPolicy.otherPetPolicy && <div><dt className="font-bold">기타 정책</dt><dd>{place.petPolicy.otherPetPolicy}</dd></div>}
                 </dl>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'tips' && (
+            <div className="space-y-4">
+              {amenityFacts.length > 0 && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    반려견 편의 정보
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {amenityFacts.map((fact) => (
+                      <div key={String(fact.key)} className="rounded-xl border border-slate-200 bg-white p-3">
+                        <div className="text-[11px] font-bold text-slate-500">{fact.label}</div>
+                        <div className="mt-1 text-xs font-bold text-slate-800">{TRI_LABEL[fact.value]}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(place.petFacilities || place.petProvidedItems || place.petPurchaseItems) && (
+                <dl className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
+                  {place.petFacilities && <div><dt className="font-bold">반려동물 관련 시설</dt><dd>{place.petFacilities}</dd></div>}
+                  {place.petProvidedItems && <div><dt className="font-bold">비치 품목</dt><dd>{place.petProvidedItems}</dd></div>}
+                  {place.petPurchaseItems && <div><dt className="font-bold">구매 가능 품목</dt><dd>{place.petPurchaseItems}</dd></div>}
+                </dl>
+              )}
+
+              {place.recommendedPoints.length > 0 && (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
+                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    이용 참고 정보
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-slate-700">
+                    {place.recommendedPoints.map((point, index) => (
+                      <li key={index} className="flex items-start gap-2"><span className="text-amber-500 font-bold">•</span><span>{point}</span></li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {(place.cautionNotes.length > 0 || place.petRisk || place.petInfo) && (
+                <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
+                  <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <ShieldAlert className="w-4 h-4 text-rose-600" />
+                    방문 시 주의사항
+                  </h4>
+                  <ul className="space-y-1.5 text-xs text-rose-950">
+                    {place.cautionNotes.map((note, index) => (
+                      <li key={index} className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{note}</span></li>
+                    ))}
+                    {place.petRisk && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petRisk}</span></li>}
+                    {place.petInfo && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petInfo}</span></li>}
+                  </ul>
+                </div>
               )}
             </div>
           )}
