@@ -58,14 +58,36 @@ export function searchPlaces(
     return Promise.reject(new Error('Invalid search filters'));
   }
   return guardedFirestoreRead(async () => {
-    const constraints = [
+    if (category) {
+      const snapshot = await getDocs(query(
+        collection(db, 'places'),
+        where('search.version', '==', SEARCH_VERSION),
+        where('search.region', '==', region),
+        where('search.category', '==', category),
+        orderBy('search.petSortKey', 'desc'),
+      ));
+      return snapshot.docs.map(documentData);
+    }
+
+    // Region-only search reuses the already deployed
+    // version + region + category + petSortKey composite index.
+    // Query each known category, then merge the results client-side.
+    const categories: SearchCategory[] = ['SPOT', 'TRAIL', 'STAY', 'CAFE', 'FOOD'];
+    const snapshots = await Promise.all(categories.map((searchCategory) => getDocs(query(
+      collection(db, 'places'),
       where('search.version', '==', SEARCH_VERSION),
       where('search.region', '==', region),
-      ...(category ? [where('search.category', '==', category)] : []),
+      where('search.category', '==', searchCategory),
       orderBy('search.petSortKey', 'desc'),
-    ];
-    const snapshot = await getDocs(query(collection(db, 'places'), ...constraints));
-    return snapshot.docs.map(documentData);
+    ))));
+
+    return snapshots
+      .flatMap((snapshot) => snapshot.docs.map(documentData))
+      .sort((a, b) => {
+        const aSearch = readSearchFields(a.data);
+        const bSearch = readSearchFields(b.data);
+        return (bSearch?.petSortKey ?? 0) - (aSearch?.petSortKey ?? 0);
+      });
   });
 }
 
