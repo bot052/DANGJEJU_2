@@ -52,19 +52,19 @@ export function loadHeroPlaces(db: Firestore): Promise<CatalogDocument[]> {
 export function searchPlaces(
   db: Firestore,
   region: SearchRegion,
-  category: SearchCategory,
+  category?: SearchCategory,
 ): Promise<CatalogDocument[]> {
   if (region === 'UNKNOWN' || category === 'UNKNOWN') {
     return Promise.reject(new Error('Invalid search filters'));
   }
   return guardedFirestoreRead(async () => {
-    const snapshot = await getDocs(query(
-      collection(db, 'places'),
+    const constraints = [
       where('search.version', '==', SEARCH_VERSION),
       where('search.region', '==', region),
-      where('search.category', '==', category),
+      ...(category ? [where('search.category', '==', category)] : []),
       orderBy('search.petSortKey', 'desc'),
-    ));
+    ];
+    const snapshot = await getDocs(query(collection(db, 'places'), ...constraints));
     return snapshot.docs.map(documentData);
   });
 }
