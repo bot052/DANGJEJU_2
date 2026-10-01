@@ -72,7 +72,16 @@ export function searchPlaces(
     // Region-only search reuses the already deployed
     // version + region + category + petSortKey composite index.
     // Query each known category, then merge the results client-side.
-    const categories: SearchCategory[] = ['SPOT', 'TRAIL', 'STAY', 'CAFE', 'FOOD'];
+    const categories: SearchCategory[] = [
+      'ATTRACTION',
+      'CAFE',
+      'FOOD',
+      'SHOPPING',
+      'STAY',
+      'LEISURE',
+      'CULTURE',
+      'EVENT',
+    ];
     const snapshots = await Promise.all(categories.map((searchCategory) => getDocs(query(
       collection(db, 'places'),
       where('search.version', '==', SEARCH_VERSION),
