@@ -59,6 +59,7 @@ export default function App() {
 
   const hero = useHeroPlaces(!isAdminRoute && isHome);
   const search = usePlaceSearch(selectedRegion, selectedCategory, !isAdminRoute);
+  const regionCountSearch = usePlaceSearch(selectedRegion, 'all', !isAdminRoute && !isHome);
   const places = isHome ? hero.places : search.places;
   const placesStatus = isHome ? hero.status : (searchReady ? search.status : 'idle');
   const retryPlaces = isHome ? hero.retry : search.retry;
@@ -323,9 +324,8 @@ export default function App() {
             {CATEGORIES.map((cat) => {
               const Icon = cat.icon;
               const isActive = selectedCategory === cat.id;
-              const count = cat.id === 'all'
-                ? places.length
-                : places.filter((p) => p.category === cat.id).length;
+              const countSource = regionCountSearch.places;
+              const count = countSource.filter((p) => p.category === cat.id).length;
 
               return (
                 <button
@@ -342,7 +342,7 @@ export default function App() {
                     <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400'}`} />
                     <span className="truncate">{cat.name}</span>
                   </div>
-                  {!isHome && selectedCategory === 'all' && (
+                  {!isHome && regionCountSearch.status === 'ready' && (
                     <span
                       className={`px-1.5 py-0.2 rounded-full text-[10px] font-black shrink-0 ${
                         isActive
