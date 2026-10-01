@@ -257,7 +257,7 @@ export default function PlaceDetailModal({
                   </div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <div className="text-[11px] font-bold text-slate-500">목줄 여부</div>
+                  <div className="text-[11px] font-bold text-slate-500">필수 착용·준비</div>
                   <div className="mt-1 text-xs font-bold text-slate-800">
                     {leashSummary}
                   </div>
@@ -316,14 +316,14 @@ export default function PlaceDetailModal({
                 </div>
               )}
 
-              {(place.cautionNotes.length > 0 || place.petRisk || place.petInfo) && (
+              {((place.cautionNotes.filter((note) => !/^필수사항\s*:/.test(note)).length > 0) || place.petRisk || place.petInfo) && (
                 <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4">
                   <h4 className="text-xs font-bold text-rose-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <ShieldAlert className="w-4 h-4 text-rose-600" />
                     방문 시 주의사항
                   </h4>
                   <ul className="space-y-1.5 text-xs text-rose-950">
-                    {place.cautionNotes.map((note, index) => (
+                    {place.cautionNotes.filter((note) => !/^필수사항\s*:/.test(note)).map((note, index) => (
                       <li key={index} className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{note}</span></li>
                     ))}
                     {place.petRisk && <li className="flex items-start gap-2"><span className="text-rose-500 font-bold">•</span><span>{place.petRisk}</span></li>}
