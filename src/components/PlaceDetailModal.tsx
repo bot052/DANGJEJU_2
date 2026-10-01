@@ -99,6 +99,36 @@ export default function PlaceDetailModal({
   const amenityFacts = AMENITY_LABELS.map(([key, label]) => ({ key, label, value: place.amenities[key] }))
     .filter((fact): fact is { key: keyof Place['amenities']; label: string; value: keyof typeof TRI_LABEL } => typeof fact.value === 'string' && fact.value in TRI_LABEL && fact.value !== 'UNKNOWN');
 
+  const petDetailEntries = place.petDetails ?? [];
+  const detailValue = (...terms: string[]) => {
+    const normalized = terms.map((term) => term.toLowerCase());
+    return petDetailEntries.find((detail) => {
+      const haystack = `${detail.key} ${detail.label}`.toLowerCase();
+      return normalized.some((term) => haystack.includes(term));
+    })?.value || '';
+  };
+  const acceptanceSummary = place.petType || detailValue('동반유형', '동반 유형', '동반가능', '동반 가능')
+    || (place.petPolicy.petAcceptance !== 'UNKNOWN' ? policyValueLabel('petAcceptance', place.petPolicy.petAcceptance) : '미확인');
+  const sizeSummary = place.petAllowed || place.petPolicy.sizeDescription
+    || (place.petPolicy.allowedSizes.length > 0 ? place.petPolicy.allowedSizes.join(', ') : '')
+    || detailValue('동반가능동물', '동반 가능 동물', '크기', '견종') || '미확인';
+  const leashSummary = place.petNeed || place.petPolicy.leashDescription
+    || detailValue('필수사항', '필수 사항', '목줄', '리드줄', '입마개', '이동장')
+    || (place.petPolicy.leashRequired !== 'UNKNOWN' ? policyValueLabel('leashRequired', place.petPolicy.leashRequired) : '미확인');
+  const indoorSummary = place.petIndoorInfo || detailValue('실내')
+    || (place.petPolicy.indoorAllowed !== 'UNKNOWN' ? policyValueLabel('indoorAllowed', place.petPolicy.indoorAllowed) : '미확인');
+  const outdoorSummary = detailValue('실외', '야외')
+    || (place.petPolicy.outdoorAllowed !== 'UNKNOWN' ? policyValueLabel('outdoorAllowed', place.petPolicy.outdoorAllowed) : '')
+    || (place.petPolicy.spaceDescription && /실외|야외|외부/.test(place.petPolicy.spaceDescription) ? place.petPolicy.spaceDescription : '')
+    || '미확인';
+
+  const consumedPetDetailKeys = new Set(
+    petDetailEntries
+      .filter((detail) => [acceptanceSummary, sizeSummary, leashSummary, indoorSummary, outdoorSummary].includes(detail.value))
+      .map((detail) => detail.key),
+  );
+  const remainingPetDetails = petDetailEntries.filter((detail) => !consumedPetDetailKeys.has(detail.key));
+
   return (
     <div className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm overflow-y-auto">
       <div 
@@ -218,33 +248,33 @@ export default function PlaceDetailModal({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <div className="text-[11px] font-bold text-slate-500">동반 가능 여부</div>
-                  <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel('petAcceptance', place.petPolicy.petAcceptance)}</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{acceptanceSummary}</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <div className="text-[11px] font-bold text-slate-500">크기 제한</div>
                   <div className="mt-1 text-xs font-bold text-slate-800">
-                    {place.petPolicy.sizeDescription || (place.petPolicy.allowedSizes.length > 0 ? place.petPolicy.allowedSizes.join(', ') : '미확인')}
+                    {sizeSummary}
                   </div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <div className="text-[11px] font-bold text-slate-500">목줄 여부</div>
                   <div className="mt-1 text-xs font-bold text-slate-800">
-                    {place.petPolicy.leashDescription || policyValueLabel('leashRequired', place.petPolicy.leashRequired)}
+                    {leashSummary}
                   </div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <div className="text-[11px] font-bold text-slate-500">실내</div>
-                  <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel('indoorAllowed', place.petPolicy.indoorAllowed)}</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{indoorSummary}</div>
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
                   <div className="text-[11px] font-bold text-slate-500">실외</div>
-                  <div className="mt-1 text-xs font-bold text-slate-800">{policyValueLabel('outdoorAllowed', place.petPolicy.outdoorAllowed)}</div>
+                  <div className="mt-1 text-xs font-bold text-slate-800">{outdoorSummary}</div>
                 </div>
               </div>
 
-              {Boolean(place.petDetails?.length) && (
+              {remainingPetDetails.length > 0 && (
                 <dl className="space-y-3">
-                  {place.petDetails!.map((detail) => (
+                  {remainingPetDetails.map((detail) => (
                     <div key={detail.key} className="rounded-xl border border-slate-200 bg-slate-50 p-3.5">
                       <dt className="text-xs font-bold text-slate-500">{detail.label}</dt>
                       <dd className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-800">{detail.value}</dd>
@@ -258,7 +288,7 @@ export default function PlaceDetailModal({
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {policyFacts
-                  .filter((fact) => !['petAcceptance', 'indoorAllowed', 'outdoorAllowed', 'leashRequired'].includes(String(fact.key)))
+                  .filter((fact) => !['petAcceptance', 'smallDogAllowed', 'mediumDogAllowed', 'largeDogAllowed', 'indoorAllowed', 'outdoorAllowed', 'leashRequired'].includes(String(fact.key)))
                   .map((fact) => (
                     <div key={String(fact.key)} className="rounded-xl border border-slate-200 bg-white p-3">
                       <div className="text-[11px] font-bold text-slate-500">{fact.label}</div>
@@ -266,14 +296,11 @@ export default function PlaceDetailModal({
                     </div>
                   ))}
               </div>
-              {(place.petPolicy.allowedBreeds.length > 0 || place.petPolicy.allowedSizes.length > 0 || place.petPolicy.sizeDescription || (place.petPolicy.spacePolicy && place.petPolicy.spacePolicy !== 'unknown') || place.petPolicy.spaceDescription || place.petPolicy.leashDescription || place.petPolicy.petFee !== null || place.petPolicy.petFeeDescription || place.petPolicy.otherPetPolicy) && (
+              {(place.petPolicy.allowedBreeds.length > 0 || (place.petPolicy.spacePolicy && place.petPolicy.spacePolicy !== 'unknown') || place.petPolicy.spaceDescription || place.petPolicy.petFee !== null || place.petPolicy.petFeeDescription || place.petPolicy.otherPetPolicy) && (
                 <dl className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 space-y-2">
                   {place.petPolicy.allowedBreeds.length > 0 && <div><dt className="font-bold">허용 견종</dt><dd>{place.petPolicy.allowedBreeds.join(', ')}</dd></div>}
-                  {place.petPolicy.allowedSizes.length > 0 && <div><dt className="font-bold">허용 크기</dt><dd>{place.petPolicy.allowedSizes.join(', ')}</dd></div>}
-                  {place.petPolicy.sizeDescription && <div><dt className="font-bold">크기 조건</dt><dd>{place.petPolicy.sizeDescription}</dd></div>}
                   {place.petPolicy.spacePolicy && place.petPolicy.spacePolicy !== 'unknown' && <div><dt className="font-bold">공간 정책</dt><dd>{place.petPolicy.spacePolicy}</dd></div>}
                   {place.petPolicy.spaceDescription && <div><dt className="font-bold">공간 조건</dt><dd>{place.petPolicy.spaceDescription}</dd></div>}
-                  {place.petPolicy.leashDescription && <div><dt className="font-bold">리드줄 조건</dt><dd>{place.petPolicy.leashDescription}</dd></div>}
                   {place.petPolicy.petFee !== null && <div><dt className="font-bold">반려동물 요금</dt><dd>{place.petPolicy.petFee.toLocaleString()}원 {place.petPolicy.petFeeDescription}</dd></div>}
                   {place.petPolicy.petFee === null && place.petPolicy.petFeeDescription && <div><dt className="font-bold">반려동물 요금 안내</dt><dd>{place.petPolicy.petFeeDescription}</dd></div>}
                   {place.petPolicy.otherPetPolicy && <div><dt className="font-bold">기타 정책</dt><dd>{place.petPolicy.otherPetPolicy}</dd></div>}
