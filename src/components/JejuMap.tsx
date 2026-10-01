@@ -196,12 +196,6 @@ export default function JejuMap({ places, selectedPlace, onSelectPlace, onOpenDe
               alt={selectedPlace.name}
               className="w-14 h-14 rounded-xl object-cover shrink-0"
               referrerPolicy="no-referrer"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (target.src !== NEUTRAL_IMAGE_PLACEHOLDER) {
-                  target.src = NEUTRAL_IMAGE_PLACEHOLDER;
-                }
-              }}
             />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold mb-0.5">
