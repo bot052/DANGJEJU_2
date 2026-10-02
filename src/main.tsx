@@ -11,7 +11,7 @@ function installTouchPawEffect() {
     if (event.pointerType === 'mouse') return;
     const paw = document.createElement('span');
     paw.className = 'dangjeju-touch-paw';
-    paw.textContent = '🐾';
+    paw.innerHTML = '<span class="dangjeju-touch-paw__print">🐾</span><span class="dangjeju-touch-paw__heart">♥</span>';
     paw.setAttribute('aria-hidden', 'true');
     paw.style.left = `${event.clientX}px`;
     paw.style.top = `${event.clientY}px`;
