@@ -58,9 +58,14 @@ export default function App() {
   const adminAccess = useAdminAccess(user?.uid ?? null);
 
   const hero = useHeroPlaces(!isAdminRoute && isHome);
-  const search = usePlaceSearch(selectedRegion, selectedCategory, !isAdminRoute);
-  const regionCountSearch = usePlaceSearch(selectedRegion, 'all', !isAdminRoute && !isHome);
-  const places = isHome ? hero.places : search.places;
+  // Load each region once. Reuse the same result for the list, map, and category counts
+  // instead of issuing a second region-wide Firestore query batch.
+  const search = usePlaceSearch(selectedRegion, 'all', !isAdminRoute);
+  const regionCountSearch = search;
+  const regionPlaces = selectedCategory === 'all'
+    ? search.places
+    : search.places.filter((place) => place.category === selectedCategory);
+  const places = isHome ? hero.places : regionPlaces;
   const placesStatus = isHome ? hero.status : (searchReady ? search.status : 'idle');
   const retryPlaces = isHome ? hero.retry : search.retry;
   const docCache = isHome ? hero.cache : search.cache;
