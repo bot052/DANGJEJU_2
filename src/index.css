@@ -27,7 +27,7 @@
   html,
   body,
   #root {
-    cursor: url('/corgi-walk-cursor.svg') 7 24, auto;
+    cursor: url('/corgi-cursor-polished.svg') 8 27, auto;
   }
 
   a,
@@ -40,7 +40,7 @@
   select,
   summary,
   .leaflet-interactive {
-    cursor: url('/corgi-walk-cursor.svg') 7 24, pointer;
+    cursor: url('/corgi-cursor-polished.svg') 8 27, pointer;
   }
 
   input[type='text'],
