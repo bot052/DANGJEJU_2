@@ -4,25 +4,57 @@ import 'leaflet/dist/leaflet.css';
 import App from './App.tsx';
 import './index.css';
 
-function installTouchPawEffect() {
-  if (typeof window === 'undefined' || !window.matchMedia('(pointer: coarse)').matches) return;
+function installPawInteractions() {
+  if (typeof window === 'undefined') return;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
 
-  const onPointerDown = (event: PointerEvent) => {
-    if (event.pointerType === 'mouse') return;
+  const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+  let lastTrailAt = 0;
+  let trailSide = 1;
+
+  const spawn = (x: number, y: number, kind: 'trail' | 'click' | 'touch') => {
     const paw = document.createElement('span');
-    paw.className = 'dangjeju-touch-paw';
-    paw.innerHTML = '<span class="dangjeju-touch-paw__print">🐾</span><span class="dangjeju-touch-paw__heart">♥</span>';
+    paw.className = `dangjeju-paw-fx dangjeju-paw-fx--${kind}`;
     paw.setAttribute('aria-hidden', 'true');
-    paw.style.left = `${event.clientX}px`;
-    paw.style.top = `${event.clientY}px`;
+    paw.style.left = `${x}px`;
+    paw.style.top = `${y}px`;
+    if (kind === 'trail') {
+      trailSide *= -1;
+      paw.style.setProperty('--paw-x', `${trailSide * 8}px`);
+      paw.innerHTML = '<span class="dangjeju-paw-fx__print">🐾</span>';
+    } else {
+      paw.innerHTML = '<span class="dangjeju-paw-fx__print">🐾</span><span class="dangjeju-paw-fx__heart">♥</span><span class="dangjeju-paw-fx__sparkle">✦</span>';
+    }
     document.body.appendChild(paw);
     paw.addEventListener('animationend', () => paw.remove(), { once: true });
+    window.setTimeout(() => paw.remove(), 900);
   };
 
-  window.addEventListener('pointerdown', onPointerDown, { passive: true });
+  if (finePointer) {
+    window.addEventListener('pointermove', (event) => {
+      const now = performance.now();
+      if (now - lastTrailAt < 85) return;
+      lastTrailAt = now;
+      spawn(event.clientX, event.clientY, 'trail');
+    }, { passive: true });
+
+    window.addEventListener('pointerdown', (event) => {
+      if (event.pointerType !== 'mouse') return;
+      spawn(event.clientX, event.clientY, 'click');
+    }, { passive: true });
+  }
+
+  if (coarsePointer) {
+    window.addEventListener('pointerdown', (event) => {
+      if (event.pointerType === 'mouse') return;
+      spawn(event.clientX, event.clientY, 'touch');
+    }, { passive: true });
+  }
 }
 
-installTouchPawEffect();
+installPawInteractions();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
