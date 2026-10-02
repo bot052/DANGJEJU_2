@@ -130,12 +130,11 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
   const petSizeBadgeLabel = ktoAllowedAnimal
     || explicitSizeDescription
     || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '');
-  const petInformationLabel = petSizeBadgeLabel
-    || (petInformationStatus === 'ADMIN_CONFIRMED'
-      ? PET_ADMIN_LABEL
-      : petInformationStatus === 'KTO_OVERLAY_FOUND'
-        ? (adminPetInformation ? PET_KNOWN_LABEL : PET_KNOWN_LABEL)
-        : PET_UNKNOWN_LABEL);
+  const petInformationLabel = petInformationStatus === 'ADMIN_CONFIRMED'
+    ? PET_ADMIN_LABEL
+    : petInformationStatus === 'KTO_OVERLAY_FOUND'
+      ? PET_KNOWN_LABEL
+      : PET_UNKNOWN_LABEL;
   const search = readSearch(data);
   const name = effectiveText(data, 'name', kto.title) || document.id;
   const address = effectiveText(data, 'address', kto.addr1);
@@ -173,6 +172,7 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
     coordinates: coordinatesFor(data, kto),
     petInformationStatus,
     petInformationLabel,
+    petSizeBadgeLabel,
     petInformationNotice: known
       ? adminPetInformation
         ? '관리자가 확인하거나 보완한 반려동물 정보입니다. 방문 전 해당 시설에 최신 이용 조건을 확인해 주세요.'

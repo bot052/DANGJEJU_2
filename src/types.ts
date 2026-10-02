@@ -110,6 +110,7 @@ export interface Place {
   tags: string[];
   petInformationStatus?: PetInformationStatus;
   petInformationLabel?: string;
+  petSizeBadgeLabel?: string;
   petInformationNotice?: string;
   petDetails?: { key: string; label: string; value: string; source: 'ADMIN' | 'KTO' }[];
   imageFallbackUrls?: string[];

@@ -128,6 +128,11 @@ export default function PlaceCard({
             <span className={`rounded-md border px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${place.petInformationStatus === 'KTO_OVERLAY_FOUND' || place.petInformationStatus === 'ADMIN_CONFIRMED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
               {place.petInformationLabel}
             </span>
+            {place.petSizeBadgeLabel && (
+              <span className="rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-800">
+                {place.petSizeBadgeLabel}
+              </span>
+            )}
           </div>
         </div>
 
