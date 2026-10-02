@@ -124,12 +124,16 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
   const explicitSizeDescription = text(policy.sizeDescription);
   const explicitAllowedSizes = stringValues(policy.allowedSizes);
   const ktoAllowedAnimal = petDetails.find((detail) => detail.key === 'acmpyPsblCpam')?.value || '';
-  // The detail modal already treats KTO acmpyPsblCpam ("동반 가능 동물") as the
-  // primary size/allowed-animal summary. Reuse that same source for the list badge
-  // so cards and details cannot disagree.
-  const petSizeBadgeLabel = ktoAllowedAnimal
+  // List queries intentionally load only places/{placeId}, not the KTO source subdocument.
+  // Prefer size/allowed-animal values denormalized on the place document so the second
+  // badge is available before opening the detail modal; source-enriched detail remains
+  // the final fallback.
+  const petSizeBadgeLabel = text(data.petAllowed)
+    || text(data.acmpyPsblCpam)
+    || text(policy.allowedAnimalDescription)
     || explicitSizeDescription
-    || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '');
+    || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '')
+    || ktoAllowedAnimal;
   const petInformationLabel = petInformationStatus === 'ADMIN_CONFIRMED'
     ? PET_ADMIN_LABEL
     : petInformationStatus === 'KTO_OVERLAY_FOUND'
