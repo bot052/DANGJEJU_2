@@ -123,9 +123,12 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
   const adminPetInformation = petInformationStatus === 'ADMIN_CONFIRMED' || hasPetDetailOverrides(data);
   const explicitSizeDescription = text(policy.sizeDescription);
   const explicitAllowedSizes = stringValues(policy.allowedSizes);
-  // The list badge only surfaces an explicit stored size rule. Never infer a size limit
-  // from generic pet-information availability.
-  const petSizeBadgeLabel = explicitSizeDescription
+  const ktoAllowedAnimal = petDetails.find((detail) => detail.key === 'acmpyPsblCpam')?.value || '';
+  // The detail modal already treats KTO acmpyPsblCpam ("동반 가능 동물") as the
+  // primary size/allowed-animal summary. Reuse that same source for the list badge
+  // so cards and details cannot disagree.
+  const petSizeBadgeLabel = ktoAllowedAnimal
+    || explicitSizeDescription
     || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '');
   const petInformationLabel = petSizeBadgeLabel
     || (petInformationStatus === 'ADMIN_CONFIRMED'
