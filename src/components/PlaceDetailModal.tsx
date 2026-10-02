@@ -181,9 +181,6 @@ export default function PlaceDetailModal({
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500 text-white">
                 {place.regionName}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-md">
-                {place.petInformationLabel}
-              </span>
               {place.petType && (
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/90 text-white backdrop-blur-md">
                   🐾 {place.petType}
