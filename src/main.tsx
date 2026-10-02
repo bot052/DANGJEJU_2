@@ -23,7 +23,7 @@ function installPawInteractions() {
     if (kind === 'trail') {
       trailSide *= -1;
       paw.style.setProperty('--paw-x', `${trailSide * 8}px`);
-      paw.innerHTML = '<span class="dangjeju-paw-fx__print">🐾</span>';
+      paw.innerHTML = '<span class="dangjeju-paw-fx__print dangjeju-paw-fx__print--trail">🐾</span>';
     } else {
       paw.innerHTML = '<span class="dangjeju-paw-fx__print">🐾</span><span class="dangjeju-paw-fx__heart">♥</span><span class="dangjeju-paw-fx__sparkle">✦</span>';
     }
