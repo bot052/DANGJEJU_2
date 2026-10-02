@@ -20,3 +20,36 @@
   background-color: rgba(217, 119, 6, 0.6);
 }
 
+
+
+/* DangJeju desktop paw cursor — pointer devices only; mobile/touch is unchanged. */
+@media (hover: hover) and (pointer: fine) {
+  html,
+  body,
+  #root {
+    cursor: url('/paw-cursor.svg') 16 16, auto;
+  }
+
+  a,
+  button,
+  [role='button'],
+  input[type='button'],
+  input[type='submit'],
+  input[type='reset'],
+  label[for],
+  select,
+  summary,
+  .leaflet-interactive {
+    cursor: url('/paw-cursor.svg') 16 16, pointer;
+  }
+
+  input[type='text'],
+  input[type='search'],
+  input[type='email'],
+  input[type='password'],
+  input[type='tel'],
+  input[type='url'],
+  textarea {
+    cursor: text;
+  }
+}
