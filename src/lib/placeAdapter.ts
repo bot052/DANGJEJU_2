@@ -1,4 +1,5 @@
 import type { Place, PlaceCategory, RegionId, TriState } from '../types.ts';
+import collectedPetPlaces from '../data/jeju-pet-places.json';
 import { isCanonicalPlaceSource, isPlaceId, isPublicStatus } from './placeIdentity';
 import {
   SEARCH_CATEGORY_TO_UI,
@@ -28,6 +29,12 @@ export const PET_UNKNOWN_NOTICE = '반려동물 동반 관련 정보가 아직 �
 
 const record = objectValue;
 const text = trimmedText;
+
+const collectedPetByContentId = new Map(
+  (collectedPetPlaces as Array<{ contentId?: string; petAllowed?: string }>).
+    filter((place) => place.contentId).
+    map((place) => [String(place.contentId), place] as const),
+);
 
 // Prefer Firestore search.category when present. Fallback mirrors Owner 8-kind rules.
 export function categoryFor(contentTypeId: unknown, cat3: unknown, title: string): PlaceCategory {
@@ -128,12 +135,14 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
   // Prefer size/allowed-animal values denormalized on the place document so the second
   // badge is available before opening the detail modal; source-enriched detail remains
   // the final fallback.
+  const collectedPet = collectedPetByContentId.get(text(data.contentId) || document.id);
   const petSizeBadgeLabel = text(data.petAllowed)
     || text(data.acmpyPsblCpam)
     || text(policy.allowedAnimalDescription)
     || explicitSizeDescription
     || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '')
-    || ktoAllowedAnimal;
+    || ktoAllowedAnimal
+    || text(collectedPet?.petAllowed);
   const petInformationLabel = petInformationStatus === 'ADMIN_CONFIRMED'
     ? PET_ADMIN_LABEL
     : petInformationStatus === 'KTO_OVERLAY_FOUND'
