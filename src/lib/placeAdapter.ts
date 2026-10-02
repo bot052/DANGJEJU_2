@@ -121,11 +121,18 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
   const allPetDetails = effectivePetDetails(data, source?.data ?? {});
   const petDetails = known ? allPetDetails : [];
   const adminPetInformation = petInformationStatus === 'ADMIN_CONFIRMED' || hasPetDetailOverrides(data);
-  const petInformationLabel = petInformationStatus === 'ADMIN_CONFIRMED'
-    ? PET_ADMIN_LABEL
-    : petInformationStatus === 'KTO_OVERLAY_FOUND'
-      ? (adminPetInformation ? '관리자 보완 · KTO 반려동물 정보' : PET_KNOWN_LABEL)
-      : PET_UNKNOWN_LABEL;
+  const explicitSizeDescription = text(policy.sizeDescription);
+  const explicitAllowedSizes = stringValues(policy.allowedSizes);
+  // The list badge only surfaces an explicit stored size rule. Never infer a size limit
+  // from generic pet-information availability.
+  const petSizeBadgeLabel = explicitSizeDescription
+    || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '');
+  const petInformationLabel = petSizeBadgeLabel
+    || (petInformationStatus === 'ADMIN_CONFIRMED'
+      ? PET_ADMIN_LABEL
+      : petInformationStatus === 'KTO_OVERLAY_FOUND'
+        ? (adminPetInformation ? PET_KNOWN_LABEL : PET_KNOWN_LABEL)
+        : PET_UNKNOWN_LABEL);
   const search = readSearch(data);
   const name = effectiveText(data, 'name', kto.title) || document.id;
   const address = effectiveText(data, 'address', kto.addr1);
