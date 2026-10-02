@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="36" viewBox="0 0 48 36">
+<g stroke="#4B2A1A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<!-- upright corgi ears -->
+<path d="M12.5 12.5 13.5 3.8l6.3 6.3M28.5 10.8 34.5 4l.8 10" fill="#F59A23"/>
+<path d="m15 8-0.2-2.3 2.2 3M31 8.5l2.1-2.3-.2 3.5" fill="#F47C64" stroke-width="1.2"/>
+<!-- long rounded orange back/body -->
+<path d="M17 12c4.5-3.2 12-3.5 18-.6 4 2 5.7 5.2 4.7 8.7-.8 3-3.5 5.1-7.2 5.5H17c-5.8 0-9.5-2.8-9.5-7 0-2.7 2-5 5-6.1z" fill="#F5A028"/>
+<!-- fluffy white chest/belly -->
+<path d="M13.2 13.5c2.2-2 5.4-2.4 8.1-1.4-.8 2.3-.8 4.5.1 6.6 1.4 3.2.3 6.4-3.1 7.8-4.7 1.8-9.6-.5-10.5-4.6-.7-3.2 1.2-6.6 5.4-8.4z" fill="#FFF9EA"/>
+<path d="M20.5 22.2c3.7 2.5 8.2 3.1 12.2 1.8l-1.1 3.3H20z" fill="#FFF9EA"/>
+<!-- face -->
+<circle cx="13.5" cy="15.6" r="1.15" fill="#302017" stroke="none"/>
+<path d="M8.5 18.2c1.5.8 3.2.7 4.3-.3" fill="none"/>
+<circle cx="15.9" cy="19.1" r="1.25" fill="#FF8E73" stroke="none" opacity=".85"/>
+<!-- legs in lively running pose -->
+<path d="M18.5 25.5c-2.2 3.4-4.5 4.2-7 4.5M24 25.5c1.5 2.4 3.6 3.4 6.2 3.8M33 24.8c1.7 2.2 3.6 3 6 2.8" fill="none" stroke-width="2.2"/>
+<!-- curled fluffy tail -->
+<path d="M37 13.5c4-4.3 8-2.1 6.8 1.7-.8 2.5-3.4 3.4-5.8 2.4 3.2-.2 3.9-2.3 2.4-3.2" fill="#F5A028"/>
+<!-- happy motion marks -->
+<path d="M7 10 4.8 7.8M8.8 7.5 8 4.5M5.5 13 2.5 12.5" fill="none" stroke="#F59E0B" stroke-width="1.7"/>
+</g>
+</svg>
