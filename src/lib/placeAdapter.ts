@@ -21,9 +21,9 @@ import {
 
 export type CatalogDocument = { id: string; path: string; data: Record<string, unknown> };
 export const PLACEHOLDER_IMAGE = `${import.meta.env?.BASE_URL ?? '/'}place-placeholder.svg`;
-export const PET_KNOWN_LABEL = '반려동물 정보 있음';
-export const PET_ADMIN_LABEL = '반려동물 정보 있음';
-export const PET_UNKNOWN_LABEL = '반려동물 정보 확인 필요';
+export const PET_KNOWN_LABEL = '동반 정보 제공';
+export const PET_ADMIN_LABEL = '동반 정보 제공';
+export const PET_UNKNOWN_LABEL = '방문 전 확인 권장';
 export const PET_UNKNOWN_NOTICE = '반려동물 동반 관련 정보가 아직 확인되지 않았습니다. 동반 불가를 의미하지 않으며, 방문 전 해당 시설에 동반 가능 여부와 이용 조건을 직접 확인해 주세요.';
 
 const record = objectValue;
