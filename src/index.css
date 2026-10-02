@@ -55,68 +55,65 @@
 }
 
 
-/* Touch-only paw feedback. It is visual only and never intercepts taps. */
-@media (pointer: coarse) {
-  .dangjeju-touch-paw {
-    position: fixed;
-    z-index: 99999;
-    pointer-events: none;
-    transform: translate(-50%, -50%) scale(0.55) rotate(-10deg);
-    width: 38px;
-    height: 38px;
-    opacity: 0;
-    animation: dangjeju-paw-pop 520ms cubic-bezier(.2,.8,.25,1) forwards;
-  }
-
-  .dangjeju-touch-paw__print {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    place-items: center;
-    font-size: 24px;
-    line-height: 1;
-    filter: sepia(0.25) saturate(1.15);
-  }
-
-  .dangjeju-touch-paw__heart {
-    position: absolute;
-    right: -1px;
-    top: -5px;
-    font-size: 11px;
-    line-height: 1;
-    color: #f59e0b;
-    text-shadow: 0 1px 0 #fff7ed;
-    animation: dangjeju-heart-pop 520ms ease-out forwards;
-  }
+/* Playful DangJeju paw interactions. Decorative only; never intercepts input. */
+.dangjeju-paw-fx {
+  position: fixed;
+  z-index: 99999;
+  width: 38px;
+  height: 38px;
+  pointer-events: none;
+  user-select: none;
+  transform: translate(-50%, -50%);
 }
 
-@keyframes dangjeju-paw-pop {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.45) rotate(-12deg);
-  }
-  28% {
-    opacity: 0.95;
-    transform: translate(-50%, -50%) scale(1.08) rotate(5deg);
-  }
-  55% {
-    opacity: 0.9;
-    transform: translate(-50%, -55%) scale(0.96) rotate(-2deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, -72%) scale(1.12) rotate(7deg);
-  }
-}
+.dangjeju-paw-fx__print,
+.dangjeju-paw-fx__heart,
+.dangjeju-paw-fx__sparkle { position: absolute; line-height: 1; }
 
-@keyframes dangjeju-heart-pop {
-  0% { opacity: 0; transform: translateY(4px) scale(0.4) rotate(-10deg); }
-  35% { opacity: 1; transform: translateY(0) scale(1.15) rotate(8deg); }
-  100% { opacity: 0; transform: translateY(-10px) scale(0.85) rotate(12deg); }
+.dangjeju-paw-fx__print { inset: 0; display: grid; place-items: center; filter: sepia(.25) saturate(1.15); }
+.dangjeju-paw-fx__heart { right: -2px; top: -5px; color: #f59e0b; text-shadow: 0 1px #fff7ed; }
+.dangjeju-paw-fx__sparkle { left: -3px; top: 0; color: #fbbf24; }
+
+.dangjeju-paw-fx--trail {
+  opacity: 0;
+  transform: translate(calc(-50% + var(--paw-x)), -50%) rotate(-12deg) scale(.6);
+  animation: dangjeju-trail 620ms ease-out forwards;
+}
+.dangjeju-paw-fx--trail .dangjeju-paw-fx__print { font-size: 15px; }
+
+.dangjeju-paw-fx--click,
+.dangjeju-paw-fx--touch {
+  opacity: 0;
+  animation: dangjeju-click-pop 600ms cubic-bezier(.2,.8,.25,1) forwards;
+}
+.dangjeju-paw-fx--click .dangjeju-paw-fx__print,
+.dangjeju-paw-fx--touch .dangjeju-paw-fx__print { font-size: 25px; }
+.dangjeju-paw-fx--click .dangjeju-paw-fx__heart,
+.dangjeju-paw-fx--touch .dangjeju-paw-fx__heart { font-size: 12px; animation: dangjeju-float-heart 600ms ease-out forwards; }
+.dangjeju-paw-fx--click .dangjeju-paw-fx__sparkle,
+.dangjeju-paw-fx--touch .dangjeju-paw-fx__sparkle { font-size: 12px; animation: dangjeju-sparkle 600ms ease-out forwards; }
+
+@keyframes dangjeju-trail {
+  0% { opacity: 0; transform: translate(calc(-50% + var(--paw-x)), -50%) rotate(-15deg) scale(.45); }
+  25% { opacity: .58; transform: translate(calc(-50% + var(--paw-x)), -52%) rotate(8deg) scale(.82); }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--paw-x)), -72%) rotate(14deg) scale(.95); }
+}
+@keyframes dangjeju-click-pop {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.35) rotate(-12deg); }
+  30% { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(7deg); }
+  55% { opacity: .95; transform: translate(-50%, -55%) scale(.96) rotate(-3deg); }
+  100% { opacity: 0; transform: translate(-50%, -78%) scale(1.08) rotate(8deg); }
+}
+@keyframes dangjeju-float-heart {
+  0% { opacity: 0; transform: translateY(5px) scale(.35); }
+  35% { opacity: 1; transform: translateY(-1px) scale(1.2) rotate(8deg); }
+  100% { opacity: 0; transform: translate(7px,-15px) scale(.75) rotate(16deg); }
+}
+@keyframes dangjeju-sparkle {
+  0%,100% { opacity: 0; transform: scale(.2) rotate(0); }
+  38% { opacity: 1; transform: scale(1.25) rotate(35deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .dangjeju-touch-paw {
-    animation-duration: 1ms;
-  }
+  .dangjeju-paw-fx { display: none; }
 }
