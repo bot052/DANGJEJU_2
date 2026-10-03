@@ -1,5 +1,7 @@
 import PlaceImage from './PlaceImage';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import type { CatalogDocument } from '../lib/placeAdapter';
+import { enrichVisiblePlaceWithSource } from '../hooks/usePlaceQueries';
 import { Place } from '../types';
 import { MapPin, Heart, ChevronRight } from 'lucide-react';
 
@@ -11,6 +13,7 @@ interface PlaceCardProps {
   onSelect: (place: Place) => void;
   onToggleSave: (placeId: string) => void;
   onOpenDetail: (place: Place) => void;
+  docCache?: React.MutableRefObject<Map<string, CatalogDocument>>;
 }
 
 const CATEGORY_STYLES: Record<string, { label: string; badgeClass: string; icon: string }> = {
@@ -33,7 +36,34 @@ export default function PlaceCard({
   onSelect,
   onToggleSave,
   onOpenDetail,
+  docCache,
 }: PlaceCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [visibleSizeLabel, setVisibleSizeLabel] = useState(place.petSizeBadgeLabel || '');
+
+  useEffect(() => {
+    setVisibleSizeLabel(place.petSizeBadgeLabel || '');
+    if (place.petSizeBadgeLabel || !docCache || !cardRef.current) return;
+
+    let active = true;
+    let requested = false;
+    const observer = new IntersectionObserver((entries) => {
+      if (requested || !entries.some((entry) => entry.isIntersecting)) return;
+      requested = true;
+      observer.disconnect();
+      void enrichVisiblePlaceWithSource(place, docCache.current).then((enriched) => {
+        if (active && enriched.petSizeBadgeLabel) setVisibleSizeLabel(enriched.petSizeBadgeLabel);
+      }).catch(() => {
+        // Keep the base status badge when optional detail enrichment is unavailable.
+      });
+    }, { rootMargin: '120px 0px', threshold: 0.01 });
+
+    observer.observe(cardRef.current);
+    return () => {
+      active = false;
+      observer.disconnect();
+    };
+  }, [place.id, place.petSizeBadgeLabel, docCache]);
   const cat = CATEGORY_STYLES[place.category] || {
     label: '관광지',
     badgeClass: 'bg-purple-600 text-white',
@@ -53,6 +83,7 @@ export default function PlaceCard({
 
   return (
     <div
+      ref={cardRef}
       id={`place-card-${place.id}`}
       onClick={handleCardClick}
       style={{ flexShrink: 0 }}
@@ -128,9 +159,9 @@ export default function PlaceCard({
             <span className={`rounded-md border px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold ${place.petInformationStatus === 'KTO_OVERLAY_FOUND' || place.petInformationStatus === 'ADMIN_CONFIRMED' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-100 text-slate-600'}`}>
               {place.petInformationLabel}
             </span>
-            {place.petSizeBadgeLabel && (
+            {visibleSizeLabel && (
               <span className="rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] sm:text-[11px] font-bold text-amber-800">
-                {place.petSizeBadgeLabel}
+                {visibleSizeLabel}
               </span>
             )}
           </div>

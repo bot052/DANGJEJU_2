@@ -16,6 +16,10 @@ type QueryCache = Map<string, QueryEntry>;
 // Share public results and pending reads, including the list and region-count query.
 const publicQueries: QueryCache = new Map();
 
+// Visible-card detail cache: one source enrichment per place for the current session.
+// This reuses the same source path as the detail modal without changing Firestore data.
+const visiblePetDetails = new Map<string, Promise<Place>>();
+
 function useRevalidation(refresh: () => void) {
   useEffect(() => {
     // Invalidate even while disabled/hidden; the next enabled render must read fresh data.
@@ -118,6 +122,20 @@ export function usePlaceSearch(region: RegionId, category: PlaceCategory, enable
     return searchPlaces(db!, searchRegion, searchCategory);
   }, [region, category]);
   return { ...useCachedPlaces(publicQueries, `${region}:${category}`, ready, load), ready };
+}
+
+export async function enrichVisiblePlaceWithSource(
+  place: Place,
+  docCache: Map<string, CatalogDocument>,
+): Promise<Place> {
+  const cached = visiblePetDetails.get(place.id);
+  if (cached) return cached;
+  const request = enrichPlaceWithSource(place, docCache).catch((error) => {
+    visiblePetDetails.delete(place.id);
+    throw error;
+  });
+  visiblePetDetails.set(place.id, request);
+  return request;
 }
 
 export async function enrichPlaceWithSource(

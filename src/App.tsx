@@ -551,6 +551,7 @@ export default function App() {
                         }}
                         onToggleSave={toggleSavePlace}
                         onOpenDetail={handleOpenDetail}
+                    docCache={docCache}
                       />
                     ))
                   )}
