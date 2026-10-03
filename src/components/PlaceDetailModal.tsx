@@ -237,11 +237,6 @@ export default function PlaceDetailModal({
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1">
           {activeTab === 'pet' && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
-                <h4 className="text-sm font-bold text-slate-800">{place.petInformationLabel}</h4>
-                <p className="mt-2 text-sm leading-relaxed text-slate-700">{place.petInformationNotice}</p>
-              </div>
-
               {/* 방문 결정에 필요한 핵심 반려동물 정보를 먼저 표시 */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 <div className="rounded-xl border border-slate-200 bg-white p-3">
