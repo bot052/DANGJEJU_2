@@ -136,11 +136,22 @@ export function adaptPlace(document: CatalogDocument, sources: CatalogDocument[]
   // badge is available before opening the detail modal; source-enriched detail remains
   // the final fallback.
   const collectedPet = collectedPetByContentId.get(text(data.contentId) || document.id);
+  const smallDogAllowed = triState(policy.smallDogAllowed);
+  const mediumDogAllowed = triState(policy.mediumDogAllowed);
+  const largeDogAllowed = triState(policy.largeDogAllowed);
+  const policySizeSummary = smallDogAllowed === 'TRUE' && mediumDogAllowed === 'TRUE' && largeDogAllowed === 'TRUE'
+    ? '전 견종 동반 가능'
+    : smallDogAllowed === 'TRUE' && mediumDogAllowed === 'FALSE' && largeDogAllowed === 'FALSE'
+      ? '소형견 동반 가능'
+      : smallDogAllowed === 'TRUE' && mediumDogAllowed === 'TRUE' && largeDogAllowed === 'FALSE'
+        ? '중형견까지 동반 가능'
+        : '';
   const petSizeBadgeLabel = text(data.petAllowed)
     || text(data.acmpyPsblCpam)
     || text(policy.allowedAnimalDescription)
     || explicitSizeDescription
     || (explicitAllowedSizes.length > 0 ? explicitAllowedSizes.join(', ') : '')
+    || policySizeSummary
     || ktoAllowedAnimal
     || text(collectedPet?.petAllowed);
   const petInformationLabel = petInformationStatus === 'ADMIN_CONFIRMED'
