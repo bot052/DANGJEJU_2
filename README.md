@@ -144,16 +144,5 @@ npm run dev
 
 개발 서버는 기본적으로 `http://localhost:3000`에서 실행됩니다.
 
-Firebase를 사용하는 기능은 프로젝트의 Firebase Web Config 환경변수가 필요합니다. 실제 키가 포함된 `.env` 또는 `.env.local` 파일은 GitHub에 커밋하지 마세요.
 
----
 
-<div align="center">
-
-### 🧡 여행지를 찾는 시간은 줄이고, 반려견과 함께할 수 있는 순간은 더 많이.
-
-**두고 가지 않아도 되는 여행, 반려견과 함께하는 제주를 찾다. 댕제주**
-
-[🐾 댕제주 이용하기](https://dangjeju-2.vercel.app/#/)
-
-</div>
