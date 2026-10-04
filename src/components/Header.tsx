@@ -51,7 +51,7 @@ export default function Header({
               </h1>
             </div>
             <p className="text-[11px] text-slate-500 font-semibold hidden sm:flex items-center gap-1">
-              <span>제주 반려견 스마트 관광 도우미</span>
+              <span>두고 가지 않아도 되는 여행, 반려견과 함께하는 제주를 찾다. 댕제주</span>
               <span className="text-amber-500"></span>
             </p>
           </div>
